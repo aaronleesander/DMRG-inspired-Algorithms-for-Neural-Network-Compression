@@ -19,6 +19,23 @@ pauli_x = np.array([[0,1],
 
 g = 1
 
+class Hamiltonian:
+    # Matrix Product States
+    # First lattice position (1x3x2x2)
+    left_bound = np.array([np.identity(2), pauli_z, g*pauli_x])
+    left_bound = left_bound[np.newaxis, :] # Reshape to add the first index
+
+    # Last lattice position (3x1x2x2)
+    right_bound = np.array([[g*pauli_x],
+                               [pauli_z],
+                               [np.identity(2)]])
+
+    # Middle lattice positions (3x3x2x2)
+    middle = np.array([[np.identity(2), pauli_z, g*pauli_x],
+                       [0, 0, pauli_z],
+                       [0, 0, np.identity(2)]])
+
+
 # Matrix Product States
 # First lattice position (1x3x2x2)
 A_1 = np.array([np.identity(2), pauli_z, g*pauli_x])
