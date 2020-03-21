@@ -11,19 +11,22 @@
 import numpy as np
 
 class Hamiltonian:
-
     def __init__(self, left_bound, inner, right_bound):
-        # First lattice position (1x3x2x2)->(3x2x2)
+        # Leftmost lattice position 
         self.left_bound = left_bound
-        # Middle lattice positions (3x3x2x2)
+        # Middle lattice positions 
         self.inner = inner
-        # Last lattice position (3x1x2x2)->3x2x2
+        # Rightmost lattice position 
         self.right_bound = right_bound
 
 
 ### TODO: Define Wavefunction class
 
-def contract_from_left(A, B, pos):
+
+### TODO: Define Wavefunction class
+
+# Used to contract Hamiltonian in direction A -> B
+def contract(A, B, pos):
     if B.ndim == 4: # Inner lattice positions
         tensor = np.einsum('ijk,aibc->ajbkc', A, B)
         tensor = np.reshape(tensor, (3,2**pos,2**pos)) # Collapses indices to (c, a*j, b*k) for i particles
@@ -39,7 +42,7 @@ pauli_z = np.array([[1,0],
                     [0,-1]])
 
 pauli_x = np.array([[0,1],
-                   [1,0]])
+                    [1,0]])
 
 zero = np.zeros((2,2))
 identity = np.identity(2)
@@ -49,12 +52,17 @@ g = 1
 N = 10
 
 # Initialization of Hamiltonian
+# Done using Matrix Product States by hand
+
+# Dimensions (1x3x2x2)->(3x2x2)
 left_bound = np.array([identity, pauli_z, g*pauli_x])
-    
+
+# Dimensions (3x3x2x2)
 inner = np.array([np.array([identity, pauli_z, g*pauli_x]),
                    np.array([zero, zero, pauli_z]),
                    np.array([zero, zero, np.identity(2)])])
 
+# Dimensions (3x1x2x2)->3x2x2 
 right_bound = np.array([[g*pauli_x],
                         [pauli_z],
                         [identity]])
@@ -66,6 +74,6 @@ H = Hamiltonian(left_bound, inner, right_bound)
 tensor = H.left_bound
 # Loop over all the inner lattice positions
 for i in range(2, N):
-     tensor = contract_from_left(tensor, H.inner, i)
+     tensor = contract(tensor, H.inner, i)
 # Final lattice position has different indices so is done alone
-E = contract_from_left(tensor, H.right_bound, N)
+E = contract(tensor, H.right_bound, N)
