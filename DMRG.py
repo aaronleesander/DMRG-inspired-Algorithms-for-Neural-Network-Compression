@@ -39,4 +39,22 @@ class Hamiltonian:
                                [pauli_z],
                                [identity]])
 
+def contract_from_left(A, B):
+    tensor = np.einsum('ijk,aibc->ajbkc', A, B)
+    tensor = np.reshape(tensor, (3,4,4)) # Collapses indices to (c, a*j, b*k)
+                                         # TODO: Verify correct reshape
+    return tensor
+
 H = Hamiltonian()
+
+first_collapse = np.einsum('ijk, aibc->ajbkc', H.left_bound, H.middle)
+first_collapse = np.reshape(first_collapse, (3,4,4))
+
+N = 3
+inner_tensor = first_collapse
+for i in range(1, N-1):
+    inner_tensor = np.einsum('ijk, aibc->ajbkc', inner_tensor, H.middle)
+    inner_tensor = np.reshape(inner_tensor, (3,2,2))
+
+last_collapse = np.einsum('ijk,iab->jkab', inner_tensor, H.right_bound)
+last_collapse = np.reshape(last_collapse, (2^N,2^N))
