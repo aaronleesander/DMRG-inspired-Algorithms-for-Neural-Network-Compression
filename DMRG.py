@@ -75,11 +75,11 @@ right_bound = np.squeeze(right_bound) # Removes unnecessary index
 
 H = Hamiltonian(left_bound, inner, right_bound)
 
-##################### CONTRACT HAMILTONIAN #####################################
+##################### CONTRACT HAMILTONIAN L->R ################################
 # Initialize with first lattice position
 tensor = H.left_bound
 # Loop over all the inner lattice positions
 for i in range(2, N):
-     tensor = contract(tensor, H.inner, i)
+     tensor = contract_left_to_right(tensor, H.inner, i)
 # Final lattice position has different indices so is done alone
-E = contract(tensor, H.right_bound, N)
+E = contract_left_to_right(tensor, H.right_bound, N)
