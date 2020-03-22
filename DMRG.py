@@ -57,7 +57,7 @@ identity = np.identity(2)
 # Interaction parameter
 g = 1
 # Lattice positions
-N = 10
+N = 3
 
 # Initialization of Hamiltonian
 # Done using Matrix Product States by hand
@@ -66,8 +66,8 @@ left_bound = np.array([identity, pauli_z, g*pauli_x])
 
 # Dimensions (3x3x2x2)
 inner = np.array([np.array([identity, pauli_z, g*pauli_x]),
-                   np.array([zero, zero, pauli_z]),
-                   np.array([zero, zero, np.identity(2)])])
+                  np.array([zero, zero, pauli_z]),
+                  np.array([zero, zero, np.identity(2)])])
 
 # Dimensions (3x1x2x2)->3x2x2 
 right_bound = np.array([[g*pauli_x],
