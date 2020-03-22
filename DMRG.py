@@ -38,12 +38,12 @@ def contract_left_to_right(A, B, pos):
         tensor = np.reshape(tensor, (2**pos,2**pos))
 
     return tensor
-# TODO: When collapsing with a wavefunction
-#       the tensor shape will be based on size of
-#       wavefunction matrices also, not just lattice pos
 # TODO: Verify correct reshape
 # NOTE: In DMRG, the dimension of the final lattice position
 #       will be a good marker for when to reverse direction
+# NOTE: When collapsing with a wavefunction
+#       the tensor shape will be based on size of
+#       wavefunction matrices also, not just lattice pos
 
 ##################### INITIALIZATION ###########################################
 pauli_z = np.array([[1,0],
@@ -77,7 +77,7 @@ right_bound = np.squeeze(right_bound) # Removes unnecessary index
 
 H = Hamiltonian(left_bound, inner, right_bound)
 
-##################### CONTRACT HAMILTONIAN L->R ################################
+##################### CONTRACT HAMILTONIAN L->R ###############################
 # Initialize with first lattice position
 tensor = H.left_bound
 # Loop over all the inner lattice positions
@@ -85,3 +85,5 @@ for i in range(2, N):
      tensor = contract_left_to_right(tensor, H.inner, i)
 # Final lattice position has different indices so is done alone
 E = contract_left_to_right(tensor, H.right_bound, N)
+
+# TODO: Verify that Hamiltonian is same when contracted L->R vs R->L
