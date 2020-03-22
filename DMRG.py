@@ -25,16 +25,17 @@ class Hamiltonian:
 ### TODO: Define Wavefunction class
 
 ###################### FUNCTIONS ##############################################
-# Used to contract Hamiltonian in direction A -> B
-# Reshape collapses indices to (c, a*j, b*k) for i particles
+# Used to contract Hamiltonian horizontally from left to right
 # TODO: Verify correct reshape
-def contract(A, B, pos):
+def contract_left_to_right(A, B, pos):
     if B.ndim == 4: # Inner lattice positions
-        tensor = np.einsum('ijk,aibc->ajbkc', A, B)
+        tensor = np.einsum('ijk,iabc->ajbkc', A, B)
+        # Reshape collapses indices to (a, j*b, k*c) for i particles
         tensor = np.reshape(tensor, (3,2**pos,2**pos))
 
     if B.ndim == 3: # Final lattice position
-        tensor = np.einsum('ijk,iab->jkab', A, B)
+        tensor = np.einsum('ijk,iab->jakb', A, B)
+        # Reshape collapses indices to (j*a, k*b) for i particles
         tensor = np.reshape(tensor, (2**pos,2**pos))
 
     return tensor
