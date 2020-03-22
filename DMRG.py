@@ -37,9 +37,7 @@ def contract_horizontal(A, B, pos, dir):
         tensor = np.reshape(tensor, (3, 2**pos, 2**pos))
 
     if B.ndim == 3:  # Final lattice position
-        if dir == 'right':
-            tensor = np.einsum('ijk, iab->jakb', A, B)
-        if dir == 'left':
+        if dir == 'right' or 'left':  # Seems to be direction-independent
             tensor = np.einsum('ijk, iab->jakb', A, B)
         # Reshape collapses indices to (j*a, k*b) for i particles
         tensor = np.reshape(tensor, (2**pos, 2**pos))
@@ -47,6 +45,8 @@ def contract_horizontal(A, B, pos, dir):
     return tensor
 
 # TODO: Verify correct reshape
+# TODO: Verify if final lattice position is direction-independent
+#       or if there is a mistake
 # NOTE: In DMRG, the dimension of the final lattice position
 #       will be a good marker for when to reverse direction
 # NOTE: When collapsing with a wavefunction
