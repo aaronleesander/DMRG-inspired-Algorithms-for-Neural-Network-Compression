@@ -26,7 +26,6 @@ class Hamiltonian:
 
 ###################### FUNCTIONS ##############################################
 # Used to contract Hamiltonian horizontally from left to right
-# TODO: Verify correct reshape
 def contract_left_to_right(A, B, pos):
     if B.ndim == 4: # Inner lattice positions
         tensor = np.einsum('ijk,iabc->ajbkc', A, B)
@@ -42,6 +41,9 @@ def contract_left_to_right(A, B, pos):
 # TODO: When collapsing with a wavefunction
 #       the tensor shape will be based on size of
 #       wavefunction matrices also, not just lattice pos
+# TODO: Verify correct reshape
+# NOTE: In DMRG, the dimension of the final lattice position
+#       will be a good marker for when to reverse direction
 
 ##################### INITIALIZATION ###########################################
 pauli_z = np.array([[1,0],
