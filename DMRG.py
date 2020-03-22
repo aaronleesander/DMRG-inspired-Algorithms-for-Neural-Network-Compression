@@ -27,14 +27,20 @@ class Hamiltonian:
 
 ###################### FUNCTIONS ##############################################
 # Used to contract Hamiltonian horizontally from left to right
-def contract_left_to_right(A, B, pos):
+def contract_horizontal(A, B, pos, dir):
     if B.ndim == 4:  # Inner lattice positions
-        tensor = np.einsum('ijk,iabc->ajbkc', A, B)
+        if dir == 'right':
+            tensor = np.einsum('ijk, iabc->ajbkc', A, B)
+        if dir == 'left':  # Can be replaced with else, if for readability
+            tensor = np.einsum('ijk, aibc->ajbkc', A, B)
         # Reshape collapses indices to (a, j*b, k*c) for i particles
         tensor = np.reshape(tensor, (3, 2**pos, 2**pos))
 
-    if B.ndim == 3: # Final lattice position
-        tensor = np.einsum('ijk,iab->jakb', A, B)
+    if B.ndim == 3:  # Final lattice position
+        if dir == 'right':
+            tensor = np.einsum('ijk, iab->jakb', A, B)
+        if dir == 'left':
+            tensor = np.einsum('ijk, iab->jakb', A, B)
         # Reshape collapses indices to (j*a, k*b) for i particles
         tensor = np.reshape(tensor, (2**pos, 2**pos))
 
@@ -48,7 +54,7 @@ def contract_left_to_right(A, B, pos):
 #       wavefunction matrices also, not just lattice pos
 
 
-##################### INITIALIZATION ###########################################
+##################### INITIALIZATION ##########################################
 pauli_z = np.array([[1, 0],
                     [0, -1]])
 
@@ -86,8 +92,17 @@ H = Hamiltonian(left_bound, inner, right_bound)
 tensor = H.left_bound
 # Loop over all the inner lattice positions
 for i in range(2, N):
-    tensor = contract_left_to_right(tensor, H.inner, i)
+    tensor = contract_horizontal(tensor, H.inner, i, "right")
 # Final lattice position has different indices so is done alone
-E = contract_left_to_right(tensor, H.right_bound, N)
+E_L = contract_horizontal(tensor, H.right_bound, N, "right")
 
-# TODO: Verify that Hamiltonian is same when contracted L->R vs R->L
+##################### CONTRACT HAMILTONIAN L->R ###############################
+# Initialize with first lattice position
+tensor = H.right_bound
+# Loop over all the inner lattice positions
+for i in range(2, N):
+    tensor = contract_horizontal(tensor, H.inner, i, "left")
+# Final lattice position has different indices so is done alone
+E_R = contract_horizontal(tensor, H.left_bound, N, "left")
+
+E_L == E_R
