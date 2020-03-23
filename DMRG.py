@@ -2,18 +2,19 @@
 # Author: Aaron Sander
 # Date: March 2020
 
-# This program is used for initial learning of tensor network methods to be
-# used in my bachelor thesis.
+# This program is used for initial learning of tensor network methods to be used
+# in my bachelor thesis.
 # It is an implementation of Matrix Product States (MPS) and Density Matrix
 # Renormalization Group (DMRG) for finding the ground state of an arbitrary
 # Hamiltonian
 
-######################### IMPORTS #############################################
+
+######################### IMPORTS ##############################################
 import numpy as np
 
 
 ######################## CLASSES ##############################################
-class Hamiltonian:
+class MPO:
     def __init__(self, left_bound, inner, right_bound):
         # Leftmost lattice position
         self.left_bound = left_bound
@@ -54,7 +55,8 @@ def contract_horizontal(A, B, pos, dir):
 #       wavefunction matrices also, not just lattice pos
 
 
-##################### INITIALIZATION ##########################################
+##################### INITIALIZATION ###########################################
+# Operators
 pauli_z = np.array([[1, 0],
                     [0, -1]])
 
@@ -68,8 +70,7 @@ g = 1
 # Lattice positions
 N = 3
 
-# Initialization of Hamiltonian
-# Done using Matrix Product States by hand
+# Initialization of Hamiltonian MPO (entries done by hand)
 # Dimensions (1x3x2x2)->(3x2x2)
 left_bound = np.array([identity, pauli_z, g*pauli_x])
 
@@ -84,25 +85,25 @@ right_bound = np.array([[g*pauli_x],
                         [identity]])
 right_bound = np.squeeze(right_bound)  # Removes unnecessary index
 
-H = Hamiltonian(left_bound, inner, right_bound)
+Hamiltonian_MPO = MPO(left_bound, inner, right_bound)
 
 
 ##################### CONTRACT HAMILTONIAN L->R ###############################
 # Initialize with first lattice position
-tensor = H.left_bound
+tensor = Hamiltonian_MPO.left_bound
 # Loop over all the inner lattice positions
 for i in range(2, N):
-    tensor = contract_horizontal(tensor, H.inner, i, "right")
+    tensor = contract_horizontal(tensor, Hamiltonian_MPO.inner, i, "right")
 # Final lattice position has different indices so is done alone
-E_L = contract_horizontal(tensor, H.right_bound, N, "right")
+E_L = contract_horizontal(tensor, Hamiltonian_MPO.right_bound, N, "right")
 
 ##################### CONTRACT HAMILTONIAN L->R ###############################
 # Initialize with first lattice position
-tensor = H.right_bound
+tensor = Hamiltonian_MPO.right_bound
 # Loop over all the inner lattice positions
 for i in range(2, N):
-    tensor = contract_horizontal(tensor, H.inner, i, "left")
+    tensor = contract_horizontal(tensor, Hamiltonian_MPO.inner, i, "left")
 # Final lattice position has different indices so is done alone
-E_R = contract_horizontal(tensor, H.left_bound, N, "left")
+E_R = contract_horizontal(tensor, Hamiltonian_MPO.left_bound, N, "left")
 
 E_L == E_R
