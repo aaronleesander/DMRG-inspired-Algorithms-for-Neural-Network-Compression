@@ -2,14 +2,14 @@
 # Author: Aaron Sander
 # Date: March 2020
 
-# This program is used for initial learning of tensor network methods
-#  to be used in my bachelor thesis.
+# This program is used for initial learning of tensor network methods to be
+# used in my bachelor thesis.
 # It is an implementation of Matrix Product States (MPS) and Density Matrix
 # Renormalization Group (DMRG) for finding the ground state of an arbitrary
 # Hamiltonian
 
 
-######################### IMPORTS ##############################################
+######################### IMPORTS #############################################
 import numpy as np
 
 
@@ -40,15 +40,13 @@ def contract_horizontal(A, B, dir):
         if dir == 'left':  # Can be replaced with else, if for readability
             tensor = np.einsum('ijk, aibc->ajbkc', A, B)
         # Reshape collapses indices to (a, j*b, k*c)
-        tensor = np.reshape(tensor, (A.shape[0], A.shape[1]*B.shape[2],
-                                     A.shape[2]*B.shape[3]))
+        tensor = np.reshape(tensor, (A.shape[0], A.shape[1]*B.shape[2], A.shape[2]*B.shape[3]))
 
     if B.ndim == 3:  # Applied to outer lattice position
         if dir == 'right' or 'left':  # Seems to be direction-independent
             tensor = np.einsum('ijk, iab->jakb', A, B)
         # Reshape collapses indices to (j*a, k*b)
-        tensor = np.reshape(tensor, (A.shape[1]*B.shape[1],
-                                     A.shape[2]*B.shape[2]))
+        tensor = np.reshape(tensor, (A.shape[1]*B.shape[1], A.shape[2]*B.shape[2]))
 
     return tensor
 
@@ -58,10 +56,9 @@ def contract_vertical(A, B, dir):
         if dir == 'down' or 'up':  # NOTE: This is only correct if A_i == A_i_dagger
             tensor = np.einsum('ijk, abci->ajbkc', A, B)
             # Reshape to (j*a, k*b, c)
-            tensor = np.reshape(tensor, (A.shape[1]*B.shape[0],
-                                         A.shape[2]*B.shape[1], B.shape[2]))
+            tensor = np.reshape(tensor, (A.shape[1]*B.shape[0], A.shape[2]*B.shape[1], B.shape[2]))
 
-    if B.ndim == 3 and A.ndim == 2:  # Applied to outer tensor of Hamiltonian
+    if B.ndim == 3 and A.ndim == 2:  #  Applied to outer tensor of Hamiltonian
         if dir == 'down':  # From Bra->Operator->Ket
             tensor = np.einsum('ij, abj->iab', A, B)
             # Reshape to (i*a, b)
@@ -75,8 +72,7 @@ def contract_vertical(A, B, dir):
         if dir == 'down' or 'up':
             tensor = np.einsum('ijk, kab->aibj', A, B)
             # Reshape to (i*a, j*b)
-            tensor = np.reshape(tensor, (A.shape[0]*B.shape[1],
-                                         A.shape[1]*B.shape[2]))
+            tensor = np.reshape(tensor, (A.shape[0]*B.shape[1], A.shape[1]*B.shape[2]))
 
     if B.ndim == 2:  # Applied to outer tensor of wavefunction
         if dir == 'down':
@@ -139,9 +135,9 @@ MPO = MPO(left_bound, inner, right_bound)
 d = 5
 
 up_ket = np.zeros((d, 1))
-up_ket[0, 0] = 1
+up_ket[0,0] = 1
 down_ket = np.zeros((d, 1))
-down_ket[1, 0] = 1
+down_ket[1,0] = 1
 
 # Dimensions (2 x 1 x d) - > (2 x d)
 A_1 = np.array([[up_ket],
@@ -177,6 +173,7 @@ MPS_ket = MPS(A_1, A_i, A_N)
 # NOTE: May be necessary to reshape wavefunctions to D x D x 2
 
 
+######################## TESTING ##############################################
 ##################### CONTRACT HAMILTONIAN L->R ###############################
 # Initialize with first lattice position
 tensor = MPO.left_bound
@@ -196,51 +193,54 @@ for i in range(2, N):
 # Final lattice position has different indices so is done alone
 E_R = contract_horizontal(tensor, MPO.left_bound, "left")
 
-E_L == E_R
+if E_L.all() == E_R.all():
+    print("Hamiltonian contracts properly in both directions")
 
 
 ####################### CONTRACT FIRST LATTICE POSITION DOWNWARDS #############
 # Dimensions (3*d x 2)
-first_collapse = contract_vertical(MPS_bra.left_bound, MPO.left_bound, 'down')
+first = contract_vertical(MPS_bra.left_bound, MPO.left_bound, 'down')
 # Dimensions (3*d*d)
-last_collapse_down = contract_vertical(first_collapse, MPS_ket.left_bound, 'down')
+pos1_contract_down = contract_vertical(first, MPS_ket.left_bound, 'down')
+
 
 ####################### CONTRACT FIRST LATTICE POSITION UPWARDS ###############
 # Dimensions (3*d x 2)
-first_collapse = contract_vertical(MPS_ket.left_bound, MPO.left_bound, 'up')
+first = contract_vertical(MPS_ket.left_bound, MPO.left_bound, 'up')
 # Dimensions (3*d*d)
-last_collapse_up = contract_vertical(first_collapse, MPS_bra.left_bound, 'up')
+pos1_contract_up = contract_vertical(first, MPS_bra.left_bound, 'up')
 
-last_collapse_down == last_collapse_up
+if pos1_contract_down.all() == pos1_contract_up.all():
+    print("Left lattice position contracts properly in both directions")
 
 
 ################## CONTRACT INNER LATTICE POSITION DOWNARDS ###################
 # Dimensions (3d x 3d x 2)
-first_collapse = contract_vertical(MPS_bra.inner, MPO.inner, 'down')
+first = contract_vertical(MPS_bra.inner, MPO.inner, 'down')
 # Dimensions
-last_collapse_down = contract_vertical(first_collapse, MPS_ket.inner, 'down')
-
+posI_contract_down = contract_vertical(first, MPS_ket.inner, 'down')
 
 ################## CONTRACT INNER LATTICE POSITION UPWARDS ####################
 # Dimensions (3d x 3d x 2)
-first_collapse = contract_vertical(MPS_ket.inner, MPO.inner, 'up')
+first = contract_vertical(MPS_ket.inner, MPO.inner, 'up')
 # Dimensions (3*d*d)
-last_collapse_up = contract_vertical(first_collapse, MPS_bra.inner, 'up')
+posI_contract_up = contract_vertical(first, MPS_bra.inner, 'up')
 
-last_collapse_down == last_collapse_up
+if posI_contract_down.all() == posI_contract_up.all():
+    print("Inner lattice position contracts properly in both directions")
 
 
 ################## CONTRACT LAST LATTICE POSITION DOWNWARDS #################
 # Dimensions (3d x 2)
-first_collapse = contract_vertical(MPS_bra.right_bound, MPO.right_bound, 'down')
+first = contract_vertical(MPS_bra.right_bound, MPO.right_bound, 'down')
 # Dimensions (3*d*d)
-last_collapse_down = contract_vertical(first_collapse, MPS_ket.right_bound, 'down')
+posN_contract_down = contract_vertical(first, MPS_ket.right_bound, 'down')
 
-
-################## CONTRACT LAST LATTICE POSITION DOWNWARDS #################
+################## CONTRACT LAST LATTICE POSITION UPWARDS #################
 # Dimensions (3d x 2)
-first_collapse = contract_vertical(MPS_ket.right_bound, MPO.right_bound, 'up')
+first = contract_vertical(MPS_ket.right_bound, MPO.right_bound, 'up')
 # Dimensions (3*d*d)
-last_collapse_up = contract_vertical(first_collapse, MPS_bra.right_bound, 'up')
+posN_contract_up = contract_vertical(first, MPS_bra.right_bound, 'up')
 
-last_collapse_down == last_collapse_up
+if posN_contract_down.all() == posN_contract_up.all():
+    print("Right lattice position contracts properly in both directions")
