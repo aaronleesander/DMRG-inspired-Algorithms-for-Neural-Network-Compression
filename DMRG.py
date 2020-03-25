@@ -181,9 +181,9 @@ MPO = [MPO_initial.left_bound] + [MPO_initial.inner]*(N-2) + [MPO_initial.right_
 d = 2
 
 up_ket = np.zeros((d, 1))
-up_ket[0,0] = 1
+up_ket[0, 0] = 1
 down_ket = np.zeros((d, 1))
-down_ket[1,0] = 1
+down_ket[1, 0] = 1
 
 # Dimensions (2 x 1 x d) - > (2 x d)
 A_1 = np.array([[up_ket],
