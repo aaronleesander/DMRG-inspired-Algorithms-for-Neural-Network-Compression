@@ -65,7 +65,11 @@ def contract_horizontal(A, B, dir):
 def contract_vertical(A, B, dir):
     if A.ndim == 3:
         if B.ndim == 4:
-            if dir == 'down' or 'up':
+            if dir == 'down':
+                tensor = np.einsum('ijk, abck->iajbc', A, B)  # Contracts (d x d x 2) and (3 x 3 x 2 x 2)
+                # Reshape to (i*a, j*b, c)
+                tensor = np.reshape(tensor, (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1], B.shape[3]))
+            elif dir == 'up':
                 tensor = np.einsum('ijk, abkd->iajbd', A, B)  # Contracts (d x d x 2) and (3 x 3 x 2 x 2)
                 # Reshape to (i*a, j*b, d)
                 tensor = np.reshape(tensor, (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1], B.shape[3]))
