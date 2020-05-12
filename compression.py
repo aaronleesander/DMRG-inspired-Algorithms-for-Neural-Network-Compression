@@ -116,13 +116,18 @@ def update_site(bra, ket, site, dir):
 
 def full_sweep(compressed_state, raw_state, threshold):
     # We initialize the compressed state so that it can be updated.
+
+    ### TODO: Site canonical and vidal notation are unnecessary since we start
+    ###       with a right normalized MPS anyway and sweep across
+
     # Compressed state must start right normalized for a left sweep (and vice versa)
-    A_tensors, lambda_tensors = left_normalize(compressed_state)
-    gamma_tensors, _ = vidal_notation(A_tensors, lambda_tensors, normalization='left')
-
+    #A_tensors, lambda_tensors = left_normalize(compressed_state)
+    #gamma_tensors, _ = vidal_notation(A_tensors, lambda_tensors, normalization='left')
     # Initialize site canonical form at first site
-    mixed = site_canonical(gamma_tensors, lambda_tensors, site=0)
+    #mixed = site_canonical(gamma_tensors, lambda_tensors, site=0)
 
+    A_tensors, _ = left_normalize(compressed_state)
+    mixed, _ = right_normalize(compressed_state)
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)
