@@ -6,6 +6,7 @@ from initializations import *
 from compression import *
 from contractions import *
 
+
 def test_canonical(MPS):
     ### LEFT CANONICAL FORM ###
     # Information in DMRG Schollwöck 4.4 and Delft MPS lecture
@@ -75,11 +76,29 @@ def benchmark_sweeps(raw_state, phys_dim):
 
         # Plot sweeps and similarity for each bond dimension
         x = range(len(dist))
-        plt.title("DMRG Compression (Bits = %d, L=%d)" %(phys_dim**len(raw_state), len(raw_state)))
+        plt.title("DMRG Compression (Bits = %d, L=%d)" % (phys_dim**len(raw_state), len(raw_state)))
         plt.xlabel("Sweeps")
         plt.ylabel("Cosine Similarity")
         plt.plot(x, sim, label="d=%d, CosSim=%f" % (bond_dim, 100*sim[-1]))  # TODO: Should use scatter plot
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    # Plot loss vs. bond dimension and its bounds
+    plt.figure()
+    plt.title("Percentage Loss vs. Max Bond Dimension (Bits=%d)" % phys_dim**len(raw_state))
+    plt.xlabel("Max Bond Dimension")
+    plt.ylabel("Loss (%)")
+    plt.plot(range(1, len(loss)+1), loss, label='Loss')
+    plt.legend()
+
+    # Marker at index where we have less than 5% loss
+    try:
+        index = next(x for x, value in enumerate(loss) if value < 5)+1
+        plt.axvline(index, color='r', linestyle='--')
+        plt.text(index+0.1, max(loss)/2, '5% Loss Threshold', color='r')
+        plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
+    except StopIteration:
+        print("No loss better than 5%")
+    return dimensional_states, sim
 
 
 def benchmark_compression(raw_state, phys_dim, attempts):

@@ -97,7 +97,6 @@ def right_normalize(MPS):
             S = np.diag(S_vector)
             MPS[i] = np.reshape(V, (MPS[i].shape[0], MPS[i+1].shape[0]))
         lambda_tensors.append(S)
-
     lambda_tensors.pop(-1)  # Last element is just the norm
     # Lambdas were appened from right, so list needs to be reversed
     return MPS, lambda_tensors[::-1]

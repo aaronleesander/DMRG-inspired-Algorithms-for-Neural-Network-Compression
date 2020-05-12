@@ -4,13 +4,13 @@ import numpy as np
 
 
 def initialize_random_state(num_particles, bond_dim, phys_dim):
-    # Dimensions (2 x d)
+    # Dimensions (phys_dim x d)
     M_1 = np.random.rand(phys_dim, bond_dim)
 
-    # Dimensions (d x d x 2)
+    # Dimensions (d x d x phys_dim)
     M_i = np.random.rand(bond_dim, bond_dim, phys_dim)
 
-    # Dimensions (2 x d)
+    # Dimensions (phys_dim x d)
     M_N = np.random.rand(phys_dim, bond_dim)
 
     MPS = [M_1] + [M_i]*(num_particles-2) + [M_N]

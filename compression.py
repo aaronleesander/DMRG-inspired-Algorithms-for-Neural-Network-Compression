@@ -115,11 +115,10 @@ def update_site(bra, ket, site, dir):
 
 
 def full_sweep(compressed_state, raw_state, threshold):
-
     # We initialize the compressed state so that it can be updated.
     # Compressed state must start right normalized for a left sweep (and vice versa)
     A_tensors, lambda_tensors = left_normalize(compressed_state)
-    gamma_tensors, _ = vidal_notation(A_tensors, lambda_tensors, normalization='right')
+    gamma_tensors, _ = vidal_notation(A_tensors, lambda_tensors, normalization='left')
 
     # Initialize site canonical form at first site
     mixed = site_canonical(gamma_tensors, lambda_tensors, site=0)
