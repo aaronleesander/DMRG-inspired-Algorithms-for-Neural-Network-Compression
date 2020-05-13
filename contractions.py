@@ -49,6 +49,9 @@ def contract_horizontal(A, B, dir):
                 tensor = np.einsum('ij, aj->ia', A, B)
                 # Reshape to (i*b)
                 tensor = np.reshape(tensor, (A.shape[0]*B.shape[0]))
+        elif B.ndim == 1:
+            if dir == 'right':
+                tensor = np.einsum('ij, j->i', A, B)
 
     elif A.ndim == 1:
         if B.ndim == 2:  # Final contraction before scalar product
