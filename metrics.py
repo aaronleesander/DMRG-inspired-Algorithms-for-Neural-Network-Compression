@@ -2,15 +2,15 @@ import numpy as np
 
 
 def scalar_product(A, B):
-    """Calculates the scalar product of two Matrix Product States
-       by contracting all positions vertically then horizontally.
+    """ Calculates the scalar product of two Matrix Product States
+        by contracting all positions vertically then horizontally.
 
     Args:
-      A: first MPS
-      B: second MPS
+        A: first MPS
+        B: second MPS
 
     Returns:
-      result: Frobenius norm of A and B <A|B>
+        result: Frobenius norm of A and B <A|B>
     """
     pos_0 = np.einsum('ij, ib->jb', A[0], B[0])
     pos_0 = np.reshape(pos_0, (A[0].shape[1]*B[0].shape[1]))
@@ -27,13 +27,13 @@ def scalar_product(A, B):
 
 
 def overlap(A, B):
-    """Calculates the Euclidean distance between two Matrix Product States
+    """ Calculates the Euclidean distance between two Matrix Product States
     Args:
-      A: first MPS
-      B: second MPS
+        A: first MPS
+        B: second MPS
 
     Returns:
-      overlap: Euclidian distance ||State1 - State2||
+        overlap: Euclidian distance ||State1 - State2||
     """
     overlap = np.sqrt(scalar_product(A, A) + scalar_product(B, B)
                       - scalar_product(A, B) - scalar_product(B, A))

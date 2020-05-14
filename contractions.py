@@ -6,13 +6,13 @@ def contract_horizontal(A, B, dir):
         based on the number of legs of the two tensors and their horizontal
         directional relationship A->B
     Args:
-      A: First Tensor
-      B: Second Tensor
-      dir: Horizontal direction A->B in the MPS/MPO/MPS network
-          ('left' or 'right')
+        A: First Tensor
+        B: Second Tensor
+        dir: Horizontal direction A->B in the MPS/MPO/MPS network
+            ('left' or 'right')
 
     Returns:
-      tensor: Contracted tensor C = AB
+        tensor: Contracted tensor C = AB
     """
     if A.ndim == 3:
         if B.ndim == 4:
@@ -71,13 +71,13 @@ def contract_vertical(A, B, dir):
         based on the number of legs of the two tensors and their vertical
         directional relationship A->B
     Args:
-      A: First Tensor
-      B: Second Tensor
-      dir: Vertical direction A->B in the MPS/MPO/MPS network
-           ('up' or 'down')
+        A: First Tensor
+        B: Second Tensor
+        dir: Vertical direction A->B in the MPS/MPO/MPS network
+             ('up' or 'down')
 
     Returns:
-      tensor: Contracted tensor C = AB
+        tensor: Contracted tensor C = AB
     """
     if A.ndim == 3:
         if B.ndim == 4:
@@ -129,19 +129,19 @@ def calculate_expectation(MPS_bra, MPO, MPS_ket,
         directional relationship A->B
 
     Args:
-      MPS_bra: List of MPS tensors used as the bra state
-      MPO: List of MPO tensors
-      MPS_ket: List of MPS tensors used as the ket state
-      vert_dir: Specifies direction of contracting MPS/MPO/MPS
+        MPS_bra: List of MPS tensors used as the bra state
+        MPO: List of MPO tensors
+        MPS_ket: List of MPS tensors used as the ket state
+        vert_dir: Specifies direction of contracting MPS/MPO/MPS
                 'Down': Bra -> MPO -> Ket
                 'Up': Ket -> MPO -> Bra
-      horiz_dir: Specifies direction of contracting after vertical contraction
+        horiz_dir: Specifies direction of contracting after vertical contraction
                 'Right': Left Bound -> Inner -> Right Bound
                 'Left': Right Bound -> Inner -> Left Bound
 
-      Default direction is 'down' and 'right'
+        Default direction is 'down' and 'right'
     Returns:
-      E: Operation <A|MPO|B>
+        E: Operation <A|MPO|B>
     """
     tensor = [None]*len(MPO)
 
@@ -173,12 +173,12 @@ def check_expectation_value_contractions(MPS, MPO):
         there may be a bug somewhere.
 
     Args:
-      MPS: list of tensors
-      MPO: list of tensors
+        MPS: list of tensors
+        MPO: list of tensors
 
     Returns:
-      prints expectation value based on direction and checks if they are
-      all the same
+        prints expectation value based on direction and checks if they are
+        all the same
     """
     E_D_R = calculate_expectation(MPS, MPO, MPS, 'down', 'right')
     E_D_L = calculate_expectation(MPS, MPO, MPS, 'down', 'left')

@@ -2,18 +2,32 @@ import numpy as np
 import canonical_forms as can
 
 
-def initialize_random_normed_state_MPS(num_sites, bond_dim, phys_dim):
-    """Initializes a Matrix Product State containing random values
+def initialize_random_normed_vector(length):
+    """ Initializes a normed vector of a given length
     Args:
-      num_sites: Number of tensors in MPS
-      bond_dim: Virtual dimension between each tensor
-      phys_dim: Physical dimension
+        length: Number of elements (Ex. Number of bits in data vector)
 
     Returns:
-      MPS: List of tensors of length num_sites
-           Left Bound MPS[1] has shape (phys_dim x right_bond)
-           Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
-           Right Bound MPS[-1] has shape (phys_dim x left_bond)
+        vector: Normed vector with given length
+    """
+    vector = np.random.rand(length)
+    norm = np.linalg.norm(vector)
+    vector = vector / norm
+    return vector
+
+
+def initialize_random_normed_state_MPS(num_sites, bond_dim, phys_dim):
+    """ Initializes a Matrix Product State containing random values
+    Args:
+        num_sites: Number of tensors in MPS
+        bond_dim: Virtual dimension between each tensor
+        phys_dim: Physical dimension
+
+    Returns:
+        MPS: List of tensors of length num_sites
+             Left Bound MPS[1] has shape (phys_dim x right_bond)
+             Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
+             Right Bound MPS[-1] has shape (phys_dim x left_bond)
     """
     M_1 = np.random.rand(phys_dim, bond_dim)
     M_i = np.random.rand(bond_dim, bond_dim, phys_dim)
@@ -25,32 +39,18 @@ def initialize_random_normed_state_MPS(num_sites, bond_dim, phys_dim):
     return MPS
 
 
-def initialize_random_normed_vector(length):
-    """Initializes a normed vector of a given length
-    Args:
-      length: Number of elements (Ex. Number of bits in data vector)
-
-    Returns:
-      vector: Normed vector with given length
-    """
-    vector = np.random.rand(length)
-    norm = np.linalg.norm(vector)
-    vector = vector / norm
-    return vector
-
-
 def initialize_W_state_MPS(num_sites):
-    """Initializes the W-state as a Matrix Product State
+    """ Initializes the W-state as a Matrix Product State
     Args:
-      num_sites: Number of tensors in MPS
+        num_sites: Number of tensors in MPS
 
     Returns:
-      MPS: List of tensors of length num_sites
-           Left Bound MPS[1] has shape (phys_dim x right_bond)
-           Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
-           Right Bound MPS[-1] has shape (phys_dim x left_bond)
+        MPS: List of tensors of length num_sites
+             Left Bound MPS[1] has shape (phys_dim x right_bond)
+             Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
+             Right Bound MPS[-1] has shape (phys_dim x left_bond)
 
-           Initialization done by hand
+             Initialization done by hand
     """
     M_1 = np.array([np.array([1, 0]),
                     np.array([0, 1])])
@@ -72,17 +72,17 @@ def initialize_W_state_MPS(num_sites):
 
 
 def initialize_GHZ_state_MPS(num_sites):
-    """Initializes the GHZ-state as a Matrix Product State
+    """ Initializes the GHZ-state as a Matrix Product State
     Args:
-      num_sites: Number of tensors in MPS
+        num_sites: Number of tensors in MPS
 
     Returns:
-      MPS: List of tensors of length num_sites
-           Left Bound MPS[1] has shape (phys_dim x right_bond)
-           Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
-           Right Bound MPS[-1] has shape (phys_dim x left_bond)
+        MPS: List of tensors of length num_sites
+             Left Bound MPS[1] has shape (phys_dim x right_bond)
+             Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
+             Right Bound MPS[-1] has shape (phys_dim x left_bond)
 
-           Initialization done by hand
+             Initialization done by hand
     """
     M_1 = np.array([[1, 0], [0, 1]])
 
@@ -103,24 +103,24 @@ def initialize_GHZ_state_MPS(num_sites):
 
 
 def initialize_quantum_ising_MPS(num_sites, g):
-    """Initializes the Quantum Ising Model as a Matrix Product Operator
+    """ Initializes the Quantum Ising Model as a Matrix Product Operator
     Args:
-      num_sites: Number of tensors in MPO
-      g: Interaction parameter
+        num_sites: Number of tensors in MPO
+        g: Interaction parameter
 
     Returns:
-      MPO: List of tensors of length num_sites
+        MPO: List of tensors of length num_sites
 
-           Left Bound MPO[1] has shape (right_bond
-                                        x lower_phys_dim
-                                        x upper_phys_dim)
-           Inner MPO[i] has shape (left_bond
-                                   x right_bond
-                                   x lower_phys_dim
-                                   x upper_phys_dim)
-           Right Bound MPO[-1] has shape (phys_dim x left_bond)
+             Left Bound MPO[1] has shape (right_bond
+                                         x lower_phys_dim
+                                         x upper_phys_dim)
+             Inner MPO[i] has shape (left_bond
+                                    x right_bond
+                                    x lower_phys_dim
+                                    x upper_phys_dim)
+             Right Bound MPO[-1] has shape (phys_dim x left_bond)
 
-           Initialization done by hand
+             Initialization done by hand
     """
     pauli_z = np.array([[1, 0],
                         [0, -1]])

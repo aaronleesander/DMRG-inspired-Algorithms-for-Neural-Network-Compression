@@ -6,24 +6,20 @@ import initializations as init
 import metrics as metrics
 
 
-def update_site(bra, ket, site, dir):
-    """ Updates a given site of an MPS during the compression sweep
+def contract_L(bra, ket, site):
+    """ Contracts all tensors to the left of a given site when updating
+        a site during compression sweeps
 
     Args:
-      bra: MPS used as the bra, compressed state
-      ket: MPS used as the ket, raw state
-      dir: Current direction of sweep ('left' or 'right)
+        bra: MPS used as the bra, compressed state
+        ket: MPS used as the ket, raw state
+        site: Site to be updated
 
     Returns:
-      updated_site: Updated tensor at current site
-      next_site_M: M tensor to replaced neighboring site
-                   either directly left or right of current site based on
-                   direction of sweep
+        L: Tensor with dimensions (bond_dim_compressed, bond_dim_raw)
     """
-
-    # L TENSOR WITH SHAPE (bondDim_compressed, bondDim_raw)
     for i in range(0, site):
-        if i == 0:  # Left bound
+        if i == 0:
             if i == site-1:  # L tensor is the left bound only
                 L = np.einsum('ij, ib->jb', bra[i], ket[i])
             else:
@@ -45,11 +41,21 @@ def update_site(bra, ket, site, dir):
             pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0],
                                    bra[i].shape[1]*ket[i].shape[1]))
             L = np.einsum('i, ij->j', L, pos)
+    return L
 
-    # M TENSOR AT SITE, UNCHANGED
-    M = ket[site]
 
-    # R TENSOR WITH SHAPE (bondDim_compressed, bondDim_raw)
+def contract_R(bra, ket, site):
+    """ Contracts all tensors to the right of a given site when updating
+        a site during compression sweeps
+
+    Args:
+        bra: MPS used as the bra, compressed state
+        ket: MPS used as the ket, raw state
+        site: Site to be updated
+
+    Returns:
+        R: Tensor with dimensions (bond_dim_compressed, bond_dim_raw)
+    """
     for i in range(len(bra)-1, site, -1):
         if i == len(bra)-1:
             if i == site+1:  # R tensor is the right bound only
@@ -74,6 +80,29 @@ def update_site(bra, ket, site, dir):
             pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0],
                                    bra[i].shape[1]*ket[i].shape[1]))
             R = np.einsum('ij, j->i', pos, R)
+    return R
+
+
+def update_site(bra, ket, site, dir):
+    """ Updates a given site of an MPS during the compression sweep
+
+    Args:
+        bra: MPS used as the bra, compressed state
+        ket: MPS used as the ket, raw state
+        dir: Current direction of sweep ('left' or 'right)
+
+    Returns:
+        updated_site: Updated tensor at current site
+        next_site_M: M tensor to replaced neighboring site
+                   either directly left or right of current site based on
+                   direction of sweep
+    """
+
+    if site != 0:
+        L = contract_L(bra, ket, site)
+    if site != len(bra)-1:
+        R = contract_R(bra, ket, site)
+    M = ket[site]
 
     if site == 0:
         updated_M = np.einsum('ij, aj->ia', M, R)
@@ -136,14 +165,14 @@ def compress(raw_state, bond_dim, threshold):
         specified threshold
 
     Args:
-      raw_state: MPS to be compressed
-      bond_dim: Maximum bond dimension of compressed state
-      threshold: Difference between sweeps under which a solution is found
+        raw_state: MPS to be compressed
+        bond_dim: Maximum bond dimension of compressed state
+        threshold: Difference between sweeps under which a solution is found
 
     Returns:
-      compressed_state: Final compressed state
-      dist: List of overlap values after each sweep
-      sim: List of scalar product values (cosine similarity) after each sweep
+        compressed_state: Final compressed state
+        dist: List of overlap values after each sweep
+        sim: List of scalar product values (cosine similarity) after each sweep
     """
 
     phys_dim = raw_state[0].shape[0]
@@ -182,7 +211,7 @@ def benchmark_compression(raw_state):
         max bond dimension up to the max bond dimension of the raw state
 
     Args:
-      raw_state: MPS to be compressed
+        raw_state: MPS to be compressed
 
     Returns:
         compressions: Compressed state for each bond dimension
@@ -234,8 +263,8 @@ def benchmark_compression_loss(raw_state, attempts):
         compression dimension using a certain number of initial states
 
     Args:
-      raw_state: MPS
-      attempts: Total initial states at each compressed dimension to avoid
+        raw_state: MPS
+        attempts: Total initial states at each compressed dimension to avoid
                 local minima
 
     Returns:

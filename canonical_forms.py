@@ -7,12 +7,12 @@ def left_normalize(MPS):
         Note that this modifies the input list directly.
 
     Args:
-      MPS: List of tensors
+        MPS: List of tensors
 
     Returns:
-      MPS: Left canonical form of input MPS
-      lambda_tensors: Singular values at each site, necessary for calculating
-                      gamma tensors in Vidal's Notation
+        MPS: Left canonical form of input MPS
+        lambda_tensors: Singular values at each site, necessary for calculating
+                        gamma tensors in Vidal's Notation
     """
     lambda_tensors = []
     for i in range(0, len(MPS)):
@@ -72,12 +72,12 @@ def right_normalize(MPS):
         Note that this modifies the input list directly.
 
     Args:
-      MPS: List of tensors
+        MPS: List of tensors
 
     Returns:
-      MPS: Left canonical form of input MPS
-      lambda_tensors: Singular values at each site, necessary for calculating
-                      gamma tensors in Vidal's Notation
+        MPS: Left canonical form of input MPS
+        lambda_tensors: Singular values at each site, necessary for calculating
+                        gamma tensors in Vidal's Notation
     """
     lambda_tensors = []
     for i in range(len(MPS)-1, -1, -1):
@@ -136,12 +136,12 @@ def vector_to_left_canonical_MPS(tensor, phys_dim, num_sites):
         original norm
 
     Args:
-      tensor: Vector of length that can be described by d^L (Ex: 512 = 2^9)
-      phys_dim: Physical dimension necessary on MPS (d)
-      num_sites: Number of sites necessary (L)
+        tensor: Vector of length that can be described by d^L (Ex: 512 = 2^9)
+        phys_dim: Physical dimension necessary on MPS (d)
+        num_sites: Number of sites necessary (L)
 
     Returns:
-      A_tensors: Left canonical form of input MPS
+        A_tensors: Left canonical form of input MPS
     """
     # Rank set to 1 for first calculation to work in loop
     A_tensors = []
@@ -181,15 +181,15 @@ def vidal_notation(tensors, lambda_tensors, normalization):
         gamma and lambda tensors according to Vidal's Notation
 
     Args:
-      tensors: Tensors of MPS (Either A tensors or B tensors)
-      lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
-      normalization: Previous Normalization of input tensors
-                     'left': A tensors
-                     'right': B tensors
+        tensors: Tensors of MPS (Either A tensors or B tensors)
+        lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
+        normalization: Previous Normalization of input tensors
+                       'left': A tensors
+                       'right': B tensors
 
     Returns:
-      gamma_tensors: Site tensors
-      lambda_tensors: Bond tensors, same as input tensors
+        gamma_tensors: Site tensors
+        lambda_tensors: Bond tensors, same as input tensors
     """
     # Trim singular values under a threshold,
     # otherwise inverse is hard to calculate
@@ -236,12 +236,12 @@ def bond_canonical(gamma_tensors, lambda_tensors, bond):
         each side of the bond
 
     Args:
-      gamma_tensors: Site tensors in Vidal's Notation
-      lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
-      bond: Bond around which we want to create A and B tensors
+        gamma_tensors: Site tensors in Vidal's Notation
+        lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
+        bond: Bond around which we want to create A and B tensors
 
     Returns:
-      MPS: List of A and B tensors with split occuring at the given bond
+        MPS: List of A and B tensors with split occuring at the given bond
     """
     # Bond i occurs between site i, i+1
     A_tensors = []
@@ -271,12 +271,12 @@ def site_canonical(gamma_tensors, lambda_tensors, site):
         each side of a tensor M at given site
 
     Args:
-      gamma_tensors: Site tensors in Vidal's Notation
-      lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
-      site: Site where M matrix is created
+        gamma_tensors: Site tensors in Vidal's Notation
+        lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
+        site: Site where M matrix is created
 
     Returns:
-      MPS: List of A and B tensors around M tensor (Form: AAMBB)
+        MPS: List of A and B tensors around M tensor (Form: AAMBB)
     """
     # Bond i occurs between site i and i+1
     A_tensors = []
@@ -332,10 +332,10 @@ def check_canonical_form(MPS):
 
         Final site returns the norm if all other sites are canonical.
     Args:
-      MPS: list of tensors
+        MPS: list of tensors
 
     Returns:
-      prints matrices after checking left and right canonicality
+        prints matrices after checking left and right canonicality
     """
 
     print("A Canonical Check \n")
