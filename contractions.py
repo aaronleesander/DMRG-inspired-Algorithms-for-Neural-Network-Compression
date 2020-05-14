@@ -121,10 +121,13 @@ def contract_vertical(A, B, dir):
     return tensor
 
 
-def calculate_expectation(MPS_bra, MPO, MPS_ket, vert_dir, horiz_dir):
+def calculate_expectation(MPS_bra, MPO, MPS_ket,
+                          vert_dir='down', horiz_dir='right'):
+
     """ Hardcoded contraction of tensors in an MPS/MPO/MPS network
         based on the number of legs of the two tensors and their horizontal
         directional relationship A->B
+
     Args:
       MPS_bra: List of MPS tensors used as the bra state
       MPO: List of MPO tensors
@@ -136,6 +139,7 @@ def calculate_expectation(MPS_bra, MPO, MPS_ket, vert_dir, horiz_dir):
                 'Right': Left Bound -> Inner -> Right Bound
                 'Left': Right Bound -> Inner -> Left Bound
 
+      Default direction is 'down' and 'right'
     Returns:
       E: Operation <A|MPO|B>
     """
@@ -161,3 +165,30 @@ def calculate_expectation(MPS_bra, MPO, MPS_ket, vert_dir, horiz_dir):
             E = contract_horizontal(E, tensor[i], horiz_dir)
 
     return E
+
+
+def check_expectation_value_contractions(MPS, MPO):
+    """ Tests if the result for the expectation value of an MPS and MPO
+        is the same for all directions of contraction. If this is not true,
+        there may be a bug somewhere.
+
+    Args:
+      MPS: list of tensors
+      MPO: list of tensors
+
+    Returns:
+      prints expectation value based on direction and checks if they are
+      all the same
+    """
+    E_D_R = calculate_expectation(MPS, MPO, MPS, 'down', 'right')
+    E_D_L = calculate_expectation(MPS, MPO, MPS, 'down', 'left')
+    E_U_R = calculate_expectation(MPS, MPO, MPS, 'up', 'right')
+    E_U_L = calculate_expectation(MPS, MPO, MPS, 'up', 'left')
+
+    # Rounding necessary since sometimes the values are slightly off
+    # Most likely due to rounding errors in computation
+    if (np.round(E_D_R, 5) == np.round(E_D_L, 5)
+            == np.round(E_U_R, 5)
+            == np.round(E_U_L, 5)):
+        print("Expectation value is the same in all directions")
+    print(E_D_R, E_D_L, E_U_R, E_U_L)

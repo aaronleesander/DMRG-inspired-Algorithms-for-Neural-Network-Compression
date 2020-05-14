@@ -176,6 +176,61 @@ def vector_to_left_canonical_MPS(tensor, phys_dim, num_sites):
     return A_tensors
 
 
+def vidal_notation(tensors, lambda_tensors, normalization):
+    """ Decomposes a left-normalized or right-normalized MPS into its
+        gamma and lambda tensors according to Vidal's Notation
+
+    Args:
+      tensors: Tensors of MPS (Either A tensors or B tensors)
+      lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
+      normalization: Previous Normalization of input tensors
+                     'left': A tensors
+                     'right': B tensors
+
+    Returns:
+      gamma_tensors: Site tensors
+      lambda_tensors: Bond tensors, same as input tensors
+    """
+    # Trim singular values under a threshold,
+    # otherwise inverse is hard to calculate
+    threshold = 10e-8
+    for i in range(0, len(lambda_tensors)):
+        lambda_tensors[i][lambda_tensors[i] < threshold] = 0
+
+    lambda_inverse = []
+    for i in range(0, len(lambda_tensors)):
+        try:
+            lambda_inverse.append(np.array(np.linalg.inv(lambda_tensors[i])))
+        except LinAlgError:
+            print("Lambda tensor has no inverse.")
+            print(lambda_tensors[i])
+
+    if normalization == 'left':  # A tensors as input
+        A_tensors = tensors[:]
+        # Calculate gamma tensors
+        gamma_tensors = []
+        gamma_tensors.append(A_tensors[0])  # First gamma is just the first A
+        for i in range(1, len(A_tensors)-1):
+            gamma = np.einsum('ij, jbc->ibc',
+                              lambda_inverse[i-1], A_tensors[i])
+            gamma_tensors.append(gamma)
+        gamma = np.einsum('ij, aj->ai', lambda_inverse[-1], A_tensors[-1])
+        gamma_tensors.append(gamma)
+
+    elif normalization == 'right':  # B tensors as input
+        B_tensors = tensors[:]
+        # Calculate gamma tensors
+        gamma_tensors = []
+        gamma = np.einsum('ij, jb->ib', B_tensors[0], lambda_inverse[0])
+        gamma_tensors.append(gamma)
+        for i in range(1, len(B_tensors)-1):
+            gamma = np.einsum('ijk, jb->ibk', B_tensors[i], lambda_inverse[i])
+            gamma_tensors.append(gamma)
+        gamma_tensors.append(B_tensors[-1])  # Last gamma is just the last B
+
+    return gamma_tensors, lambda_tensors
+
+
 def bond_canonical(gamma_tensors, lambda_tensors, bond):
     """ Creates a bond canonical form with left and right normalization on
         each side of the bond
@@ -211,7 +266,6 @@ def bond_canonical(gamma_tensors, lambda_tensors, bond):
     return MPS
 
 
-### Creates a site canonical form such as AAAA...M...BBBB ###
 def site_canonical(gamma_tensors, lambda_tensors, site):
     """ Creates a site canonical form with left and right normalization on
         each side of a tensor M at given site
@@ -268,56 +322,36 @@ def site_canonical(gamma_tensors, lambda_tensors, site):
     return MPS
 
 
-def vidal_notation(tensors, lambda_tensors, normalization):
-    """ Decomposes a left-normalized or right-normalized MPS into its
-        gamma and lambda tensors according to Vidal's Notation
+def check_canonical_form(MPS):
+    """ Checks if each site in an MPS is left canonical or right canonical
+        A tensor checked by contracting physical dimension and left bond
+        B tensor checked by contracting physical dimension and right bond
 
+        Output prints these checks, if the result is an identity matrix,
+        then it is canonical.
+
+        Final site returns the norm if all other sites are canonical.
     Args:
-      tensors: Tensors of MPS (Either A tensors or B tensors)
-      lambda_tensors: Bond tensors in Vidal's Notation (hold Singular Values)
-      normalization: Previous Normalization of input tensors
-                     'left': A tensors
-                     'right': B tensors
+      MPS: list of tensors
 
     Returns:
-      gamma_tensors: Site tensors
-      lambda_tensors: Bond tensors, same as input tensors
+      prints matrices after checking left and right canonicality
     """
-    # Trim singular values under a threshold,
-    # otherwise inverse is hard to calculate
-    threshold = 10e-8
-    for i in range(0, len(lambda_tensors)):
-        lambda_tensors[i][lambda_tensors[i] < threshold] = 0
 
-    lambda_inverse = []
-    for i in range(0, len(lambda_tensors)):
-        try:
-            lambda_inverse.append(np.array(np.linalg.inv(lambda_tensors[i])))
-        except LinAlgError:
-            print("Lambda tensor has no inverse.")
-            print(lambda_tensors[i])
+    print("A Canonical Check \n")
+    test_identity = np.einsum('ij, ib->jb', MPS[0], MPS[0])
+    print("Pos", "0", ":\n", test_identity)
+    for i in range(1, len(MPS)-1):
+        test_identity = np.einsum('ijk, ibk->jb', MPS[i], MPS[i])
+        print("Pos", i, ":\n", test_identity)
+    test_identity = np.einsum('ij, ij', MPS[-1], MPS[-1])
+    print("Pos", len(MPS)-1, ":\n", test_identity)
 
-    if normalization == 'left':  # A tensors as input
-        A_tensors = tensors[:]
-        # Calculate gamma tensors
-        gamma_tensors = []
-        gamma_tensors.append(A_tensors[0])  # First gamma is just the first A
-        for i in range(1, len(A_tensors)-1):
-            gamma = np.einsum('ij, jbc->ibc',
-                              lambda_inverse[i-1], A_tensors[i])
-            gamma_tensors.append(gamma)
-        gamma = np.einsum('ij, aj->ai', lambda_inverse[-1], A_tensors[-1])
-        gamma_tensors.append(gamma)
-
-    elif normalization == 'right':  # B tensors as input
-        B_tensors = tensors[:]
-        # Calculate gamma tensors
-        gamma_tensors = []
-        gamma = np.einsum('ij, jb->ib', B_tensors[0], lambda_inverse[0])
-        gamma_tensors.append(gamma)
-        for i in range(1, len(B_tensors)-1):
-            gamma = np.einsum('ijk, jb->ibk', B_tensors[i], lambda_inverse[i])
-            gamma_tensors.append(gamma)
-        gamma_tensors.append(B_tensors[-1])  # Last gamma is just the last B
-
-    return gamma_tensors, lambda_tensors
+    print("\nB Canonical Check \n")
+    test_identity = np.einsum('ij, ib->jb', MPS[-1], MPS[-1])
+    print("Pos", len(MPS)-1, ":\n", test_identity)
+    for i in range(len(MPS)-2, 0, -1):
+        test_identity = np.einsum('ijk, ajk->ia', MPS[i], MPS[i])
+        print("Pos", i, ":\n", test_identity)
+    test_identity = np.einsum('ij, ij', MPS[0], MPS[0])
+    print("Pos", 0, ":\n", test_identity)
