@@ -1,7 +1,8 @@
 import numpy as np
+import canonical_forms as can
 
 
-def initialize_random_state(num_sites, bond_dim, phys_dim):
+def initialize_random_normed_state_MPS(num_sites, bond_dim, phys_dim):
     """Initializes a Matrix Product State containing random values
     Args:
       num_sites: Number of tensors in MPS
@@ -19,10 +20,26 @@ def initialize_random_state(num_sites, bond_dim, phys_dim):
     M_N = np.random.rand(phys_dim, bond_dim)
 
     MPS = [M_1] + [M_i]*(num_sites-2) + [M_N]
+    MPS, _ = can.left_normalize(MPS)
+    MPS, _ = can.right_normalize(MPS)
     return MPS
 
 
-def initialize_W_state(num_sites):
+def initialize_random_normed_vector(length):
+    """Initializes a normed vector of a given length
+    Args:
+      length: Number of elements (Ex. Number of bits in data vector)
+
+    Returns:
+      vector: Normed vector with given length
+    """
+    vector = np.random.rand(length)
+    norm = np.linalg.norm(vector)
+    vector = vector / norm
+    return vector
+
+
+def initialize_W_state_MPS(num_sites):
     """Initializes the W-state as a Matrix Product State
     Args:
       num_sites: Number of tensors in MPS
@@ -54,7 +71,7 @@ def initialize_W_state(num_sites):
     return MPS
 
 
-def initialize_GHZ_state(num_sites):
+def initialize_GHZ_state_MPS(num_sites):
     """Initializes the GHZ-state as a Matrix Product State
     Args:
       num_sites: Number of tensors in MPS
@@ -85,7 +102,7 @@ def initialize_GHZ_state(num_sites):
     return MPS
 
 
-def initialize_quantum_ising(num_sites, g):
+def initialize_quantum_ising_MPS(num_sites, g):
     """Initializes the Quantum Ising Model as a Matrix Product Operator
     Args:
       num_sites: Number of tensors in MPO

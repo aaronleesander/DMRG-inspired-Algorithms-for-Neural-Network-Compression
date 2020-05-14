@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import metrics as metrics
 import canonical_forms as can
+import initializations as init
+import metrics as metrics
 
 
 def update_site(bra, ket, site, dir):
@@ -128,71 +129,77 @@ def update_site(bra, ket, site, dir):
     return updated_site, next_site_M
 
 
-def compress(compressed_state, raw_state, threshold):
+def compress(raw_state, bond_dim, threshold):
     """ Right normalizes a compressed state then sweeps left->right
         and right->left until a minimum is reached
         i.e. the difference in our metrics between sweeps is less than a
         specified threshold
 
     Args:
-      compressed_state: MPS with a lower maximum bond dimension
-      raw_state: MPS of higher dimensional data to be compressed
+      raw_state: MPS to be compressed
+      bond_dim: Maximum bond dimension of compressed state
       threshold: Difference between sweeps under which a solution is found
 
     Returns:
-      mixed: Final compressed state
+      compressed_state: Final compressed state
       dist: List of overlap values after each sweep
       sim: List of scalar product values (cosine similarity) after each sweep
     """
 
-    A_tensors, _ = can.left_normalize(compressed_state)
-    mixed, _ = can.right_normalize(A_tensors)
+    phys_dim = raw_state[0].shape[0]
+    compressed_state = init.initialize_random_normed_state_MPS(len(raw_state),
+                                                               bond_dim,
+                                                               phys_dim)
+
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)
-    dist.append(metrics.overlap(mixed, raw_state))
-    sim.append(metrics.scalar_product(mixed, raw_state))
+    dist.append(metrics.overlap(compressed_state, raw_state))
+    sim.append(metrics.scalar_product(compressed_state, raw_state))
     # We sweep left to right and then back right to left across the mixed state
     while True:
         # Left->right sweep
         for site in range(0, len(raw_state)-1):
-            mixed[site], mixed[site+1] = update_site(mixed, raw_state,
-                                                     site=site, dir='right')
+            compressed_state[site], compressed_state[site+1] = update_site(compressed_state, raw_state,
+                                                                           site=site, dir='right')
 
         # Right->left sweep
         for site in range(len(raw_state)-1, 0, -1):
-            mixed[site], mixed[site-1] = update_site(mixed, raw_state,
-                                                     site=site, dir='left')
+            compressed_state[site], compressed_state[site-1] = update_site(compressed_state, raw_state,
+                                                                           site=site, dir='left')
 
         # Metrics are updated after each full sweep
-        dist.append(metrics.overlap(mixed, raw_state))
-        sim.append(metrics.scalar_product(mixed, raw_state))
+        dist.append(metrics.overlap(compressed_state, raw_state))
+        sim.append(metrics.scalar_product(compressed_state, raw_state))
         if np.abs(sim[-2]-sim[-1]) < threshold:
             break
 
-    return mixed, dist, sim
+    return compressed_state, dist, sim
 
 
-def benchmark_compression(raw_state, phys_dim):
+def benchmark_compression(raw_state):
     """ Checks how well a raw state can be compressed for each possible
         max bond dimension up to the max bond dimension of the raw state
 
     Args:
-      raw_state: MPS
-      phys_dim: Physical dimension
+      raw_state: MPS to be compressed
 
     Returns:
+        compressions: Compressed state for each bond dimension
+                      such that the indexing compressions[i] has a
+                      max bond dimension i+1
+        sim: Cosine similarity for each corresponding compressed state
+        loss: Percentage loss for each corresponding compressed state
         Plots Sweeps and Loss graphs
     """
-    dimensional_states = []
+    compressions = []
     loss = []
-
+    phys_dim = raw_state[0].shape[0]
     plt.figure()
     for bond_dim in range(1, int(phys_dim**np.floor(len(raw_state)/2))):
-        compressed_state = init.initialize_random_state(len(raw_state), bond_dim, phys_dim)
 
-        compressed_state, dist, sim = compress(compressed_state, raw_state, threshold=1e-8)
-        dimensional_states.append(compressed_state)
+        compressed_state, dist, sim = compress(raw_state, bond_dim, threshold=1e-8)
+        compressions.append(compressed_state)
         loss.append(100*(1-sim[-1]))
 
         # Plot sweeps and similarity for each bond dimension
@@ -219,16 +226,15 @@ def benchmark_compression(raw_state, phys_dim):
         plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
     except StopIteration:
         print("No loss better than 5%")
-    return dimensional_states, sim
+    return compressions, sim, loss
 
 
-def benchmark_compression_loss(raw_state, phys_dim, attempts):
+def benchmark_compression_loss(raw_state, attempts):
     """ Checks average as well as upper and low bounds of loss at each
         compression dimension using a certain number of initial states
 
     Args:
       raw_state: MPS
-      phys_dim: Physical dimension
       attempts: Total initial states at each compressed dimension to avoid
                 local minima
 
@@ -239,7 +245,7 @@ def benchmark_compression_loss(raw_state, phys_dim, attempts):
     lower_bound_loss = []
     avg_loss = []
     upper_bound_loss = []
-
+    phys_dim = raw_state[0].shape[0]
     # Try all bond dimensions under our raw state's max dimension
     for bond_dim in range(1, int(phys_dim**np.floor(len(raw_state)/2))):
         max_sim = 0
@@ -248,9 +254,9 @@ def benchmark_compression_loss(raw_state, phys_dim, attempts):
 
         # Number of compressed states to try to avoid local minima
         for i in range(attempts):
-            compressed_state = init.initialize_random_state(len(raw_state), bond_dim, phys_dim)
+            compressed_state = init.initialize_random_normed_state_MPS(len(raw_state), bond_dim, phys_dim)
 
-            compressed_state, dist, sim = compress(compressed_state, raw_state, threshold=1e-8)
+            compressed_state, dist, sim = compress(raw_state, bond_dim, threshold=1e-8)
             sim_values.append(sim[-1])
 
             # We want to save the min, avg, and max loss for a given bond dimension
