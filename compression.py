@@ -1,17 +1,24 @@
-### COMPRESSION SWEEPS ###
-
 import numpy as np
 from metrics import *
 from canonical_forms import *
 
-### Bra and Ket are mixed AAMBB-type tensor networks ####
-### Tensor indices are the same as in DMRG by Schollwöck ###
-# TODO: Merge with normalization or create subfunctions
-
 
 def update_site(bra, ket, site, dir):
-    ### Bra is compressed state, ket is raw state
-    ### L TENSOR WITH SHAPE (bondDim_compressed, bondDim_raw) ###
+    """ Updates a given site of an MPS during the compression sweep
+
+    Args:
+      bra: MPS used as the bra, compressed state
+      ket: MPS used as the ket, raw state
+      dir: Current direction of sweep ('left' or 'right)
+
+    Returns:
+      updated_site: Updated tensor at current site
+      next_site_M: M tensor to replaced neighboring site
+                   either directly left or right of current site based on
+                   direction of sweep
+    """
+
+    # L TENSOR WITH SHAPE (bondDim_compressed, bondDim_raw)
     for i in range(0, site):
         if i == 0:  # Left bound
             if i == site-1:  # L tensor is the left bound only
@@ -24,19 +31,22 @@ def update_site(bra, ket, site, dir):
             pos = np.einsum('ijk, abk->iajb', bra[i], ket[i])
             # (ia) will connect to previous L, (j) will be left bond of final tensor, (b) will connect to M
             # -> (Left bond, final tensor leg, connects to M)
-            pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0], bra[i].shape[1], ket[i].shape[1]))
+            pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0],
+                                   bra[i].shape[1],
+                                   ket[i].shape[1]))
 
             # L has shape (final tensor left bond, connects to M left bond)
             L = np.einsum('i, ibc->bc', L, pos)
         else:  # Inner sites
             pos = np.einsum('ijk, abk->iajb', bra[i], ket[i])
-            pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0], bra[i].shape[1]*ket[i].shape[1]))
+            pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0],
+                                   bra[i].shape[1]*ket[i].shape[1]))
             L = np.einsum('i, ij->j', L, pos)
 
-    ### M TENSOR AT SITE, UNCHANGED ###
+    # M TENSOR AT SITE, UNCHANGED
     M = ket[site]
 
-    ### R TENSOR WITH SHAPE (bondDim_compressed, bondDim_raw) ###
+    # R TENSOR WITH SHAPE (bondDim_compressed, bondDim_raw)
     for i in range(len(bra)-1, site, -1):
         if i == len(bra)-1:
             if i == site+1:  # R tensor is the right bound only
@@ -50,17 +60,18 @@ def update_site(bra, ket, site, dir):
             pos = np.einsum('ijk, abk->iajb', bra[i], ket[i])
             # (i) will be right bond of final tensor, (a) will connect to M, (jb) will connect to previous R
             # -> (Left bond, right bond, final tensor left leg)
-            pos = np.reshape(pos, (bra[i].shape[0], ket[i].shape[0], bra[i].shape[1]*ket[i].shape[1]))
+            pos = np.reshape(pos, (bra[i].shape[0], ket[i].shape[0],
+                                   bra[i].shape[1]*ket[i].shape[1]))
             # R has shape (Connects to M right bound, final tensor right bound)
 
             R = np.einsum('ijk, k->ij', pos, R)
 
         else:  # Inner sites
             pos = np.einsum('ijk, abk->iajb', bra[i], ket[i])
-            pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0], bra[i].shape[1]*ket[i].shape[1]))
+            pos = np.reshape(pos, (bra[i].shape[0]*ket[i].shape[0],
+                                   bra[i].shape[1]*ket[i].shape[1]))
             R = np.einsum('ij, j->i', pos, R)
 
-    ### CONTRACT M' = LMR ###
     if site == 0:
         updated_M = np.einsum('ij, aj->ia', M, R)
     elif site == len(bra)-1:
@@ -68,16 +79,17 @@ def update_site(bra, ket, site, dir):
     else:
         updated_M = np.einsum('ij, jbc, ab->iac', L, M, R)
 
-    ### UPDATING SITES ###
-
     # For a left->right sweep, similar to left normalization
     if dir == 'right':
         # Inner tensor needs to be reshaped
         if updated_M.ndim == 3:
             reshaped_M = np.transpose(updated_M, (0, 2, 1))  # Move left bond and physical dimension together
-            reshaped_M = np.reshape(reshaped_M, (reshaped_M.shape[0]*reshaped_M.shape[1], reshaped_M.shape[2]))
+            reshaped_M = np.reshape(reshaped_M, (reshaped_M.shape[0]*reshaped_M.shape[1],
+                                                 reshaped_M.shape[2]))
             U, S_vector, V = np.linalg.svd(reshaped_M, full_matrices=False)
-            A_tensor = np.reshape(U, (bra[site].shape[0], bra[site].shape[2], U.shape[1]))
+            A_tensor = np.reshape(U, (bra[site].shape[0],
+                                      bra[site].shape[2],
+                                       U.shape[1]))
             A_tensor = np.transpose(A_tensor, (0, 2, 1))
         else:
             U, S_vector, V = np.linalg.svd(updated_M, full_matrices=False)
@@ -114,20 +126,25 @@ def update_site(bra, ket, site, dir):
     return updated_site, next_site_M
 
 
-def full_sweep(compressed_state, raw_state, threshold):
-    # We initialize the compressed state so that it can be updated.
+def compress(compressed_state, raw_state, threshold):
+    """ Right normalizes a compressed state then sweeps left->right
+        and right->left until a minimum is reached
+        i.e. the difference in our metrics between sweeps is less than a
+        specified threshold
 
-    ### TODO: Site canonical and vidal notation are unnecessary since we start
-    ###       with a right normalized MPS anyway and sweep across
+    Args:
+      compressed_state: MPS with a lower maximum bond dimension
+      raw_state: MPS of higher dimensional data to be compressed
+      threshold: Difference between sweeps under which a solution is found
 
-    # Compressed state must start right normalized for a left sweep (and vice versa)
-    #A_tensors, lambda_tensors = left_normalize(compressed_state)
-    #gamma_tensors, _ = vidal_notation(A_tensors, lambda_tensors, normalization='left')
-    # Initialize site canonical form at first site
-    #mixed = site_canonical(gamma_tensors, lambda_tensors, site=0)
+    Returns:
+      mixed: Final compressed state
+      dist: List of overlap values after each sweep
+      sim: List of scalar product values (cosine similarity) after each sweep
+    """
 
     A_tensors, _ = left_normalize(compressed_state)
-    mixed, _ = right_normalize(compressed_state)
+    mixed, _ = right_normalize(A_tensors)
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)

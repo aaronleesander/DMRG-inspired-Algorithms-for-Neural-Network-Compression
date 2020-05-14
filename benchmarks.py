@@ -1,5 +1,3 @@
-### TESTS AND BENCHMARKS ###
-
 import numpy as np
 import matplotlib.pyplot as plt
 from initializations import *
@@ -8,44 +6,52 @@ from contractions import *
 
 
 def test_canonical(MPS):
-    ### LEFT CANONICAL FORM ###
-    # Information in DMRG Schollwöck 4.4 and Delft MPS lecture
-    # Goal: Contract left dimension and physical dimension to get identity at all sites
+    """ Checks if each site in an MPS is left canonical or right canonical
+        A tensor checked by contracting physical dimension and left bond
+        B tensor checked by contracting physical dimension and right bond
 
-    # First site has left dimension 1, so we contract physical dimension
-    # (2 x d)
+        Output prints these checks, if the result is an identity matrix,
+        then it is canonical.
+
+        Final site returns the norm if all other sites are canonical.
+    Args:
+      MPS: list of tensors
+
+    Returns:
+      prints matrices after checking left and right canonicality
+    """
+
     print("A Canonical Check \n")
     test_identity = np.einsum('ij, ib->jb', MPS[0], MPS[0])
     print("Pos", "0", ":\n", test_identity)
     for i in range(1, len(MPS)-1):
-        # We contract left dimension and physical dimension for each site
-        # (d x d x 2)
         test_identity = np.einsum('ijk, ibk->jb', MPS[i], MPS[i])
         print("Pos", i, ":\n", test_identity)
-    # Last site has right dimension 1, so result is a singular number
-    # If all other matrices are identity, it is also the norm
-    # (2 x d)
     test_identity = np.einsum('ij, ij', MPS[-1], MPS[-1])
     print("Pos", len(MPS)-1, ":\n", test_identity)
 
-    ## RIGHT CANONICAL FORM ####
-    # Goal: Contract right dimension and physical dimension to get identity at all sites
     print("\nB Canonical Check \n")
-    # First site has right dimension 1, so we contract physical dimension
     test_identity = np.einsum('ij, ib->jb', MPS[-1], MPS[-1])
     print("Pos", len(MPS)-1, ":\n", test_identity)
     for i in range(len(MPS)-2, 0, -1):
-        # We contract right dimension and physical dimension for each site
         test_identity = np.einsum('ijk, ajk->ia', MPS[i], MPS[i])
         print("Pos", i, ":\n", test_identity)
-    # Last site has right dimension 1, so result is a singular number
-    # If all other matrices are identity, it is also the norm
     test_identity = np.einsum('ij, ij', MPS[0], MPS[0])
     print("Pos", 0, ":\n", test_identity)
 
 
-######################## EXPECTATION VALUE ####################################
 def test_expectation_value_contractions(MPS, MPO):
+    """ Tests if the result for the expectation value of an MPS and MPO
+        is the same for all directions of contraction
+
+    Args:
+      MPS: list of tensors
+      MPO: list of tensors
+
+    Returns:
+      prints expectation value based on direction and checks if they are
+      all the same
+    """
     E_D_R = calculate_expectation(MPS, MPO, MPS, 'down', 'right')
     E_D_L = calculate_expectation(MPS, MPO, MPS, 'down', 'left')
     E_U_R = calculate_expectation(MPS, MPO, MPS, 'up', 'right')
@@ -60,17 +66,25 @@ def test_expectation_value_contractions(MPS, MPO):
     print(E_D_R, E_D_L, E_U_R, E_U_L)
 
 
-def benchmark_sweeps(raw_state, phys_dim):
+def benchmark_dimensions(raw_state, phys_dim):
+    """ Checks how well a raw state can be compressed for each possible
+        max bond dimension up to the max bond dimension of the raw state
+
+    Args:
+      raw_state: MPS
+      phys_dim: Physical dimension
+
+    Returns:
+        Plots Sweeps and Loss graphs
+    """
     dimensional_states = []
     loss = []
 
     plt.figure()
     for bond_dim in range(1, int(phys_dim**np.floor(len(raw_state)/2))):
-        # Initialize compressed state MPS of desired size
         compressed_state = initialize_random_state(len(raw_state), bond_dim, phys_dim)
 
-        # Decompose as input into sweep
-        compressed_state, dist, sim = full_sweep(compressed_state, raw_state, threshold=1e-8)
+        compressed_state, dist, sim = compress(compressed_state, raw_state, threshold=1e-8)
         dimensional_states.append(compressed_state)
         loss.append(100*(1-sim[-1]))
 
@@ -102,6 +116,18 @@ def benchmark_sweeps(raw_state, phys_dim):
 
 
 def benchmark_compression(raw_state, phys_dim, attempts):
+    """ Checks average as well as upper and low bounds of loss at each
+        compression dimension using a certain number of initial states
+
+    Args:
+      raw_state: MPS
+      phys_dim: Physical dimension
+      attempts: Total initial states at each compressed dimension to avoid
+                local minima
+
+    Returns:
+        Plots Loss graphs
+    """
     dimensional_states = []
     lower_bound_loss = []
     avg_loss = []
@@ -115,11 +141,9 @@ def benchmark_compression(raw_state, phys_dim, attempts):
 
         # Number of compressed states to try to avoid local minima
         for i in range(attempts):
-            # Initialize compressed state MPS of desired size
             compressed_state = initialize_random_state(len(raw_state), bond_dim, phys_dim)
 
-            # Decompose as input into sweep
-            compressed_state, dist, sim = full_sweep(compressed_state, raw_state, threshold=1e-8)
+            compressed_state, dist, sim = compress(compressed_state, raw_state, threshold=1e-8)
             sim_values.append(sim[-1])
 
             # We want to save the min, avg, and max loss for a given bond dimension

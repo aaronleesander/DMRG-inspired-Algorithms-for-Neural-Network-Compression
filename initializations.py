@@ -1,101 +1,128 @@
-######################## INITIALIZATIONS ######################################
-
 import numpy as np
 
 
-def initialize_random_state(num_particles, bond_dim, phys_dim):
-    # Dimensions (phys_dim x d)
+def initialize_random_state(num_sites, bond_dim, phys_dim):
+    """Initializes a Matrix Product State containing random values
+    Args:
+      num_sites: Number of tensors in MPS
+      bond_dim: Virtual dimension between each tensor
+      phys_dim: Physical dimension
+
+    Returns:
+      MPS: List of tensors of length num_sites
+           Left Bound MPS[1] has shape (phys_dim x right_bond)
+           Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
+           Right Bound MPS[-1] has shape (phys_dim x left_bond)
+    """
     M_1 = np.random.rand(phys_dim, bond_dim)
-
-    # Dimensions (d x d x phys_dim)
     M_i = np.random.rand(bond_dim, bond_dim, phys_dim)
-
-    # Dimensions (phys_dim x d)
     M_N = np.random.rand(phys_dim, bond_dim)
 
-    MPS = [M_1] + [M_i]*(num_particles-2) + [M_N]
+    MPS = [M_1] + [M_i]*(num_sites-2) + [M_N]
     return MPS
 
 
-def initialize_W_state(num_particles):
-    # d = 2
-    # Dimensions (2 x d)
+def initialize_W_state(num_sites):
+    """Initializes the W-state as a Matrix Product State
+    Args:
+      num_sites: Number of tensors in MPS
+
+    Returns:
+      MPS: List of tensors of length num_sites
+           Left Bound MPS[1] has shape (phys_dim x right_bond)
+           Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
+           Right Bound MPS[-1] has shape (phys_dim x left_bond)
+
+           Initialization done by hand
+    """
     M_1 = np.array([np.array([1, 0]),
                     np.array([0, 1])])
 
-    # Dimensions (d x d x 2)
-    # (2 x d x d) -> (d x d x 2)
     M_i = np.array([np.array([[1, 0],
                               [0, 1]]),
                     np.array([[0, 1],
                               [0, 0]])])
     M_i = np.transpose(M_i, (1, 2, 0))
 
-    # Dimensions (2 x d)
     M_N = np.array([np.array([[0],
                               [1]]),
                     np.array([[1],
                               [0]])])
-    M_N = np.squeeze(M_N)
+    M_N = np.squeeze(M_N)  # Removes dummy index
 
-    MPS = [M_1] + [M_i]*(num_particles-2) + [M_N]
+    MPS = [M_1] + [M_i]*(num_sites-2) + [M_N]
     return MPS
 
 
-def initialize_GHZ_state(num_particles):
-    # d = 2
-    # Dimensions (2 x d)
+def initialize_GHZ_state(num_sites):
+    """Initializes the GHZ-state as a Matrix Product State
+    Args:
+      num_sites: Number of tensors in MPS
+
+    Returns:
+      MPS: List of tensors of length num_sites
+           Left Bound MPS[1] has shape (phys_dim x right_bond)
+           Inner MPS[i] has shape (left_bond x right_bond x phys_dim)
+           Right Bound MPS[-1] has shape (phys_dim x left_bond)
+
+           Initialization done by hand
+    """
     M_1 = np.array([[1, 0], [0, 1]])
 
-    # Dimensions (d x d x 2)
-    # (2 x d x d) -> (d x d x 2)
     M_i = np.array([np.array([[1, 0],
                               [0, 0]]),
                     np.array([[0, 0],
                               [0, 1]])])
     M_i = np.transpose(M_i, (1, 2, 0))
 
-    # Dimensions (2 x d)
     M_N = np.array([np.array([[1],
                               [0]]),
                     np.array([[0],
                               [1]])])
-    M_N = np.squeeze(M_N)
+    M_N = np.squeeze(M_N)  # Removes dummy index
 
-    MPS = [M_1] + [M_i]*(num_particles-2) + [M_N]
+    MPS = [M_1] + [M_i]*(num_sites-2) + [M_N]
     return MPS
 
 
-### Quantum Ising Model ###
-def initialize_quantum_ising(num_particles):
-    # Operators
+def initialize_quantum_ising(num_sites, g):
+    """Initializes the Quantum Ising Model as a Matrix Product Operator
+    Args:
+      num_sites: Number of tensors in MPO
+      g: Interaction parameter
+
+    Returns:
+      MPO: List of tensors of length num_sites
+
+           Left Bound MPO[1] has shape (right_bond
+                                        x lower_phys_dim
+                                        x upper_phys_dim)
+           Inner MPO[i] has shape (left_bond
+                                   x right_bond
+                                   x lower_phys_dim
+                                   x upper_phys_dim)
+           Right Bound MPO[-1] has shape (phys_dim x left_bond)
+
+           Initialization done by hand
+    """
     pauli_z = np.array([[1, 0],
                         [0, -1]])
 
     pauli_x = np.array([[0, 1],
                         [1, 0]])
-
     zero = np.zeros((2, 2))
     identity = np.identity(2)
 
-    # Interaction parameter
-    g = 2
-
-    # Initialization of Hamiltonian MPO (entries done by hand)
-    # Dimensions (1x3x2x2)->(3x2x2)
     left_bound = np.array([identity, pauli_z, g*pauli_x])
 
-    # Dimensions (3x3x2x2)
     inner = np.array([np.array([identity, pauli_z, g*pauli_x]),
                       np.array([zero, zero, pauli_z]),
                       np.array([zero, zero, np.identity(2)])])
 
-    # Dimensions (3x1x2x2)->3x2x2
     right_bound = np.array([[g*pauli_x],
                             [pauli_z],
                             [identity]])
-    right_bound = np.squeeze(right_bound)  # Removes unnecessary index
+    right_bound = np.squeeze(right_bound)  # Removes dummy index
 
-    MPO = [left_bound] + [inner]*(num_particles-2) + [right_bound]
-
+    MPO = [left_bound] + [inner]*(num_sites-2) + [right_bound]
     return MPO

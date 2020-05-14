@@ -18,7 +18,7 @@ class rawData:
 class compressedData:
     def __init__(self, uncompressed_MPS, phys_dim):
         # Creates a list of MPS's where each index i = maxBondDim-1
-        self.MPS_list, self.sim = benchmark_sweeps(uncompressed_MPS,
+        self.MPS_list, self.sim = benchmark_dimensions(uncompressed_MPS,
                                                    phys_dim)
 
 
