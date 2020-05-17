@@ -20,6 +20,7 @@ def contract_L(bra, MPO, ket, site):  # Shape (bondW, bra_leg, ket_leg)
                 L = contract_horizontal(L, pos, dir='right')
     return L
 
+
 def contract_R(bra, MPO, ket, site):  # Shape (bondW, bra_leg, ket_leg)
     for i in range(len(bra)-1, site, -1):
         if i == site+1:  # We need to keep the extra leg from the bra
@@ -38,9 +39,10 @@ def contract_R(bra, MPO, ket, site):  # Shape (bondW, bra_leg, ket_leg)
             pos = contract_vertical(pos, ket[i], dir='down')
             if i == len(bra)-1:  # Initialize R
                 R = pos
-            else: # Add pos onto previous R
+            else:  # Add pos onto previous R
                 R = contract_horizontal(pos, R, dir='right')
     return R
+
 
 # Tensor network with MPS site missing
 def create_Hamiltonian(bra, MPO, ket, site):
