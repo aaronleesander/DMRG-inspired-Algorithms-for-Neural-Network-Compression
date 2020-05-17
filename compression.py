@@ -84,7 +84,7 @@ def contract_R(bra, ket, site):
     return R
 
 
-def update_site(bra, ket, site, dir, activation_function='SiLU'): # XXX
+def update_site(bra, ket, site, dir):
     """ Updates a given site of an MPS during the compression sweep
 
     Args:
@@ -112,22 +112,6 @@ def update_site(bra, ket, site, dir, activation_function='SiLU'): # XXX
     else:
         updated_M = np.einsum('ij, jbc, ab->iac', L, M, R)
 
-    if activation_function == 'ReLU':  # XXX
-        updated_M = act.ReLU(updated_M)
-    elif activation_function == 'arctan':
-        updated_M = act.arctan(updated_M)
-    elif activation_function == 'tanh':
-        updated_M = act.tanh(updated_M)
-    elif activation_function == 'arcsinh':
-        updated_M = act.arcsinh(updated_M)
-    elif activation_function == 'sigmoid':
-        updated_M = act.sigmoid(updated_M)
-    elif activation_function == 'softplus':
-        updated_M = act.softplus(updated_M)
-    elif activation_function == 'SiLU':
-        updated_M = act.SiLU(updated_M)
-    elif activation_function == 'sinusoid':
-        updated_M = act.sinusoid(updated_M)
 
     # For a left->right sweep, similar to left normalization
     if dir == 'right':
@@ -218,7 +202,6 @@ def compress(raw_state, bond_dim, threshold):
         # Metrics are updated after each full sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
-        print(sim[-1])  # XXX
         if np.abs(sim[-2]-sim[-1]) < threshold:
             break
 

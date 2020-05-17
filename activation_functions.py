@@ -119,3 +119,21 @@ def sinusoid(tensor):
     """
 
     return np.sin(tensor)
+
+
+    if activation_function == 'ReLU':  # XXX
+        updated_M = act.ReLU(updated_M)
+    elif activation_function == 'arctan':
+        updated_M = act.arctan(updated_M)
+    elif activation_function == 'tanh':
+        updated_M = act.tanh(updated_M)
+    elif activation_function == 'arcsinh':
+        updated_M = act.arcsinh(updated_M)
+    elif activation_function == 'sigmoid':
+        updated_M = act.sigmoid(updated_M)
+    elif activation_function == 'softplus':
+        updated_M = act.softplus(updated_M)
+    elif activation_function == 'SiLU':
+        updated_M = act.SiLU(updated_M)
+    elif activation_function == 'sinusoid':
+        updated_M = act.sinusoid(updated_M)
