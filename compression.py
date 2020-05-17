@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import activation_functions as act
 import canonical_forms as can
 import initializations as init
 import metrics as metrics
@@ -83,7 +84,7 @@ def contract_R(bra, ket, site):
     return R
 
 
-def update_site(bra, ket, site, dir):
+def update_site(bra, ket, site, dir, activation_function='SiLU'): # XXX
     """ Updates a given site of an MPS during the compression sweep
 
     Args:
@@ -110,6 +111,23 @@ def update_site(bra, ket, site, dir):
         updated_M = np.einsum('ij, aj->ai', L, M)
     else:
         updated_M = np.einsum('ij, jbc, ab->iac', L, M, R)
+
+    if activation_function == 'ReLU':  # XXX
+        updated_M = act.ReLU(updated_M)
+    elif activation_function == 'arctan':
+        updated_M = act.arctan(updated_M)
+    elif activation_function == 'tanh':
+        updated_M = act.tanh(updated_M)
+    elif activation_function == 'arcsinh':
+        updated_M = act.arcsinh(updated_M)
+    elif activation_function == 'sigmoid':
+        updated_M = act.sigmoid(updated_M)
+    elif activation_function == 'softplus':
+        updated_M = act.softplus(updated_M)
+    elif activation_function == 'SiLU':
+        updated_M = act.SiLU(updated_M)
+    elif activation_function == 'sinusoid':
+        updated_M = act.sinusoid(updated_M)
 
     # For a left->right sweep, similar to left normalization
     if dir == 'right':
@@ -200,18 +218,20 @@ def compress(raw_state, bond_dim, threshold):
         # Metrics are updated after each full sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
+        print(sim[-1])  # XXX
         if np.abs(sim[-2]-sim[-1]) < threshold:
             break
 
     return compressed_state, dist, sim
 
 
-def benchmark_compression(raw_state):
+def benchmark_compression(raw_state, threshold):
     """ Checks how well a raw state can be compressed for each possible
         max bond dimension up to the max bond dimension of the raw state
 
     Args:
         raw_state: MPS to be compressed
+        threshold: Difference between sweeps under which a solution is found
 
     Returns:
         compressions: Compressed state for each bond dimension
@@ -227,7 +247,7 @@ def benchmark_compression(raw_state):
     plt.figure()
     for bond_dim in range(1, int(phys_dim**np.floor(len(raw_state)/2))):
 
-        compressed_state, dist, sim = compress(raw_state, bond_dim, threshold=1e-8)
+        compressed_state, dist, sim = compress(raw_state, bond_dim, threshold)
         compressions.append(compressed_state)
         loss.append(100*(1-sim[-1]))
 
