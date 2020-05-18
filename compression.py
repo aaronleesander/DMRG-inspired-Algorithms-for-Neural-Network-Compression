@@ -202,7 +202,7 @@ def compress(raw_state, bond_dim, threshold):
         # Metrics are updated after each full sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
-        if np.abs(sim[-2]-sim[-1]) < threshold:
+        if np.abs(dist[-2]-dist[-1]) < threshold:
             break
 
     return compressed_state, dist, sim
@@ -238,8 +238,8 @@ def benchmark_compression(raw_state, threshold):
         x = range(len(dist))
         plt.title("DMRG Compression (Bits = %d, L=%d)" % (phys_dim**len(raw_state), len(raw_state)))
         plt.xlabel("Sweeps")
-        plt.ylabel("Cosine Similarity")
-        plt.plot(x, sim, label="d=%d, CosSim=%f" % (bond_dim, 100*sim[-1]))  # TODO: Should use scatter plot
+        plt.ylabel("Euclidean Distance")
+        plt.plot(x, dist, label="d=%d, Dist=%f" % (bond_dim, dist[-1]))  # TODO: Should use scatter plot
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     # Plot loss vs. bond dimension and its bounds

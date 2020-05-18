@@ -98,63 +98,62 @@ def contract_environment(bra, ket, site):
     return M
 
 
-def gradient_descent(bra, site, grad, activation_function, learning_rate=1e-1):
-    M = bra[site]
-    if M.ndim == 3:
-        vectorized_M = np.reshape(M, (M.shape[0]*M.shape[1]*M.shape[2]))
-    elif M.ndim == 2:
-        vectorized_M = np.reshape(M, (M.shape[0]*M.shape[1]))
+def gradient_descent(unweighted, site, dL_dM, activation_function, learning_rate=1e-1):
+    A = unweighted[site]
 
-    df_dM = vectorized_M[:]
+    if A.ndim == 3:
+        A = np.reshape(A, (A.shape[0]*A.shape[1]*A.shape[2]))
+    elif A.ndim == 2:
+        A = np.reshape(A, (A.shape[0]*A.shape[1]))
+
+    df_dA = A[:]
+    if activation_function == 'linear':
+        df_dA[:] = 1
+    elif activation_function == 'ReLU':
+        df_dA[A > 0] = -1
+        df_dA[A <= 0] = 0
+    elif activation_function == 'arctan':
+        df_dA = 1/(A**2 + 1)
+    elif activation_function == 'tanh':
+        df_dA = 1-np.tanh(A)**2
+    elif activation_function == 'arcsinh':
+        df_dA = 1/np.sqrt(A**2 + 1)
+    elif activation_function == 'sigmoid':
+        df_dA = act.sigmoid(A) - act.sigmoid(A)**2
+    elif activation_function == 'softplus':
+        df_dA = 1/(1 + np.exp(-A))
+    elif activation_function == 'SiLU':
+        df_dA = (1 + np.exp(-A) + A * np.exp(-A)) / (1 + np.exp(A))**2
+    elif activation_function == 'sinusoid':
+        df_dA = np.cos(A)
+
+    grad = dL_dM * df_dA
+    updated_A = A - learning_rate*grad
+    updated_A = np.reshape(updated_A, (unweighted[site].shape))
 
     if activation_function == 'linear':
-        df_dM[:] = 1
-    elif activation_function == 'ReLU':  # XXX
-        df_dM[df_dM > 0] = 1
-        df_dM[df_dM <= 0] = 0
+        updated_M = updated_A
+    elif activation_function == 'ReLU':
+        updated_M = act.ReLU(updated_A)
     elif activation_function == 'arctan':
-        df_dM = 1/(vectorized_M**2 + 1)
+        updated_M = act.arctan(updated_A)
     elif activation_function == 'tanh':
-        df_dM = 1-np.tanh(vectorized_M)**2
+        updated_M = act.tanh(updated_A)
     elif activation_function == 'arcsinh':
-        df_dM = 1/np.sqrt(vectorized_M**2 + 1)
+        updated_M = act.arcsinh(updated_A)
     elif activation_function == 'sigmoid':
-        df_dM = act.sigmoid(vectorized_M) - act.sigmoid(vectorized_M)**2
+        updated_M = act.sigmoid(updated_A)
     elif activation_function == 'softplus':
-        df_dM = 1/(1 + np.exp(-vectorized_M))
+        updated_M = act.softplus(updated_A)
     elif activation_function == 'SiLU':
-        df_dM = (1 + np.exp(-vectorized_M) + vectorized_M * np.exp(-vectorized_M)) / (1 + np.exp(vectorized_M))**2
+        updated_M = act.SiLU(updated_A)
     elif activation_function == 'sinusoid':
-        df_dM = np.cos(df_dM)
+        updated_M = act.sinusoid(updated_A)
 
-    grad = grad * df_dM
-    updated_M = vectorized_M - learning_rate*grad
-    updated_M = np.reshape(updated_M, (M.shape))
-
-    # if activation_function == 'linear':
-    #     updated_M = updated_A
-    # elif activation_function == 'ReLU':  # XXX
-    #     df_dM[df_dM > 0] = 1
-    #     df_dM[df_dM <= 0] = 0
-    # elif activation_function == 'arctan':
-    #     df_dM = act.arctan(vectorized_M)
-    # elif activation_function == 'tanh':
-    #     df_dM = act.tanh(vectorized_M)
-    # elif activation_function == 'arcsinh':
-    #     df_dM = act.arcsinh(vectorized_M)
-    # elif activation_function == 'sigmoid':
-    #     df_dM = act.sigmoid(vectorized_M)
-    # elif activation_function == 'softplus':
-    #     df_dM = act.softplus(vectorized_M)
-    # elif activation_function == 'SiLU':
-    #     df_dM = act.SiLU(vectorized_M)
-    # elif activation_function == 'sinusoid':
-    #     updated_M = np.sin(updated_A)
-
-    return updated_M
+    return updated_A, updated_M
 
 
-def update_site(bra, ket, activation_function, site, dir):
+def update_site(bra, ket, unweighted, activation_function, site, dir):
     """ Updates a given site of an MPS during the compression sweep
 
     Args:
@@ -171,15 +170,15 @@ def update_site(bra, ket, activation_function, site, dir):
 
     M1 = contract_environment(bra, bra, site)
     M2 = contract_environment(bra, ket, site)
-    grad = M1 - M2
+    dL_dM = M1 - M2
 
-    if grad.ndim == 3:
-        grad = np.reshape(grad, (grad.shape[0]*grad.shape[1]*grad.shape[2]))
-    elif grad.ndim == 2:
-        grad = np.reshape(grad, (grad.shape[0]*grad.shape[1]))
+    if dL_dM.ndim == 3:
+        dL_dM = np.reshape(dL_dM, (dL_dM.shape[0]*dL_dM.shape[1]*dL_dM.shape[2]))
+    elif dL_dM.ndim == 2:
+        dL_dM = np.reshape(dL_dM, (dL_dM.shape[0]*dL_dM.shape[1]))
 
-    updated_M = gradient_descent(bra, site, grad, activation_function)
-    return updated_M
+    updated_A, updated_M = gradient_descent(unweighted, site, dL_dM, activation_function)
+    return updated_A, updated_M
 
 
 def compress(raw_state, bond_dim, threshold, activation_function):
@@ -200,14 +199,13 @@ def compress(raw_state, bond_dim, threshold, activation_function):
     """
 
     phys_dim = raw_state[0].shape[0]
-    compressed_state = init.initialize_random_normed_state_MPS(len(raw_state),
-                                                               bond_dim,
-                                                               phys_dim)
+    compressed_state_weighted = init.initialize_random_normed_state_MPS(len(raw_state),
+                                                                        bond_dim,
+                                                                        phys_dim)
 
-    for tensor in compressed_state:
-        if activation_function == 'linear':
-            tensor = act.linear(tensor)
-        elif activation_function == 'ReLU':  # XXX
+    compressed_state_unweighted = compressed_state_weighted[:]
+    for tensor in compressed_state_weighted:
+        if activation_function == 'ReLU':  # XXX
             tensor = act.ReLU(tensor)
         elif activation_function == 'arctan':
             tensor = act.arctan(tensor)
@@ -227,43 +225,25 @@ def compress(raw_state, bond_dim, threshold, activation_function):
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)
-    dist.append(metrics.overlap(compressed_state, raw_state))
-    sim.append(metrics.scalar_product(compressed_state, raw_state))
+    dist.append(metrics.overlap(compressed_state_weighted, raw_state))
+    sim.append(metrics.scalar_product(compressed_state_weighted, raw_state))
     # We sweep left to right and then back right to left across the mixed state
     while True:
         # Left->right sweep
         for site in range(0, len(raw_state)-1):
-            compressed_state[site] = update_site(compressed_state, raw_state, activation_function,
-                                                 site=site, dir='right')
+            compressed_state_unweighted[site], compressed_state_weighted[site] = update_site(compressed_state_weighted, raw_state, compressed_state_unweighted, activation_function,
+                                                                                                site=site, dir='right')
 
         # Right->left sweep
         for site in range(len(raw_state)-1, 0, -1):
-            compressed_state[site] = update_site(compressed_state, raw_state, activation_function,
-                                                 site=site, dir='left')
+            compressed_state_unweighted[site], compressed_state_weighted[site] = update_site(compressed_state_weighted, raw_state, compressed_state_unweighted, activation_function,
+                                                                                                site=site, dir='left')
 
         # Metrics are updated after each full sweep
-        dist.append(metrics.overlap(compressed_state, raw_state))
-        sim.append(metrics.scalar_product(compressed_state, raw_state))
-        print(sim[-1])
-        if np.abs(sim[-2]-sim[-1]) < threshold:
+        dist.append(metrics.overlap(compressed_state_weighted, raw_state))
+        sim.append(metrics.scalar_product(compressed_state_weighted, raw_state))
+        print(dist[-1])
+        if np.abs(dist[-2]-dist[-1]) < threshold:
             break
 
-    return compressed_state, dist, sim
-
-
-    # if activation_function == 'ReLU':  # XXX
-    #     updated_M = act.ReLU(updated_M)
-    # elif activation_function == 'arctan':
-    #     updated_M = act.arctan(updated_M)
-    # elif activation_function == 'tanh':
-    #     updated_M = act.tanh(updated_M)
-    # elif activation_function == 'arcsinh':
-    #     updated_M = act.arcsinh(updated_M)
-    # elif activation_function == 'sigmoid':
-    #     updated_M = act.sigmoid(updated_M)
-    # elif activation_function == 'softplus':
-    #     updated_M = act.softplus(updated_M)
-    # elif activation_function == 'SiLU':
-    #     updated_M = act.SiLU(updated_M)
-    # elif activation_function == 'sinusoid':
-    #     updated_M = act.sinusoid(updated_M)
+    return compressed_state_unweighted, compressed_state_weighted, dist, sim
