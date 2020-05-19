@@ -132,24 +132,24 @@ def gradient_descent(unweighted, site, dL_dM, activation_function, learning_rate
     updated_A = np.reshape(updated_A, (unweighted[site].shape))
 
     updated_M = updated_A
-    if activation_function == 'linear':
-        updated_M = updated_A
-    elif activation_function == 'ReLU':
-        updated_M = act.ReLU(updated_A)
-    elif activation_function == 'arctan':
-        updated_M = act.arctan(updated_A)
-    elif activation_function == 'tanh':
-        updated_M = act.tanh(updated_A)
-    elif activation_function == 'arcsinh':
-        updated_M = act.arcsinh(updated_A)
-    elif activation_function == 'sigmoid':
-        updated_M = act.sigmoid(updated_A)
-    elif activation_function == 'softplus':
-        updated_M = act.softplus(updated_A)
-    elif activation_function == 'SiLU':
-        updated_M = act.SiLU(updated_A)
-    elif activation_function == 'sinusoid':
-        updated_M = act.sinusoid(updated_A)
+    # if activation_function == 'linear':
+    #     updated_M = updated_A
+    # elif activation_function == 'ReLU':
+    #     updated_M = act.ReLU(updated_A)
+    # elif activation_function == 'arctanh':
+    #     updated_M = act.arctan(updated_A)
+    # elif activation_function == 'tanh':
+    #     updated_M = act.tanh(updated_A)
+    # elif activation_function == 'arcsinh':
+    #     updated_M = act.arcsinh(updated_A)
+    # elif activation_function == 'sigmoid':
+    #     updated_M = act.sigmoid(updated_A)
+    # elif activation_function == 'softplus':
+    #     updated_M = act.softplus(updated_A)
+    # elif activation_function == 'SiLU':
+    #     updated_M = act.SiLU(updated_A)
+    # elif activation_function == 'sinusoid':
+    #     updated_M = act.sinusoid(updated_A)
 
     return updated_A, updated_M
 
@@ -204,28 +204,10 @@ def compress(raw_state, bond_dim, threshold, activation_function, v0=0):
         compressed_state_weighted = init.initialize_random_normed_state_MPS(len(raw_state),
                                                                             bond_dim,
                                                                             phys_dim)
-
     else:
         compressed_state_weighted = v0
 
     compressed_state_unweighted = compressed_state_weighted[:]
-    for tensor in compressed_state_weighted:
-        if activation_function == 'ReLU':  # XXX
-            tensor = act.ReLU(tensor)
-        elif activation_function == 'arctan':
-            tensor = act.arctan(tensor)
-        elif activation_function == 'tanh':
-            tensor = act.tanh(tensor)
-        elif activation_function == 'arcsinh':
-            tensor = act.arcsinh(tensor)
-        elif activation_function == 'sigmoid':
-            tensor = act.sigmoid(tensor)
-        elif activation_function == 'softplus':
-            tensor = act.softplus(tensor)
-        elif activation_function == 'SiLU':
-            tensor = act.SiLU(tensor)
-        elif activation_function == 'sinusoid':
-            tensor = act.sinusoid(tensor)
 
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
@@ -237,12 +219,12 @@ def compress(raw_state, bond_dim, threshold, activation_function, v0=0):
         # Left->right sweep
         for site in range(0, len(raw_state)-1):
             compressed_state_unweighted[site], compressed_state_weighted[site] = update_site(compressed_state_weighted, raw_state, compressed_state_unweighted, activation_function,
-                                                                                                site=site, dir='right')
+                                                          site=site, dir='right')
 
         # Right->left sweep
         for site in range(len(raw_state)-1, 0, -1):
             compressed_state_unweighted[site], compressed_state_weighted[site] = update_site(compressed_state_weighted, raw_state, compressed_state_unweighted, activation_function,
-                                                                                                site=site, dir='left')
+                                                          site=site, dir='left')
 
         # Metrics are updated after each full sweep
         dist.append(metrics.overlap(compressed_state_weighted, raw_state))
@@ -251,6 +233,7 @@ def compress(raw_state, bond_dim, threshold, activation_function, v0=0):
         if np.abs(dist[-2]-dist[-1]) < threshold:
             break
 
+    compressed_state_unweighted, _ = can.left_normalize(compressed_state_unweighted)
     compressed_state_weighted, _ = can.left_normalize(compressed_state_weighted)
     dist.append(metrics.overlap(compressed_state_weighted, raw_state))
     sim.append(metrics.scalar_product(compressed_state_weighted, raw_state))
