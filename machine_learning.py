@@ -182,7 +182,7 @@ def update_site(bra, ket, unweighted, activation_function, site, dir):
     return updated_A, updated_M
 
 
-def compress(raw_state, bond_dim, threshold, activation_function):
+def compress(raw_state, bond_dim, threshold, activation_function, v0=0):
     """ Right normalizes a compressed state then sweeps left->right
         and right->left until a minimum is reached
         i.e. the difference in our metrics between sweeps is less than a
@@ -199,10 +199,14 @@ def compress(raw_state, bond_dim, threshold, activation_function):
         sim: List of scalar product values (cosine similarity) after each sweep
     """
 
-    phys_dim = raw_state[0].shape[0]
-    compressed_state_weighted = init.initialize_random_normed_state_MPS(len(raw_state),
-                                                                        bond_dim,
-                                                                        phys_dim)
+    if v0 == 0:
+        phys_dim = raw_state[0].shape[0]
+        compressed_state_weighted = init.initialize_random_normed_state_MPS(len(raw_state),
+                                                                            bond_dim,
+                                                                            phys_dim)
+
+    else:
+        compressed_state_weighted = v0
 
     compressed_state_unweighted = compressed_state_weighted[:]
     for tensor in compressed_state_weighted:
