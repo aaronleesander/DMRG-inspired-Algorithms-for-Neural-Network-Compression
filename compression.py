@@ -199,11 +199,15 @@ def compress(raw_state, bond_dim, threshold):
             compressed_state[site], compressed_state[site-1] = update_site(compressed_state, raw_state,
                                                                            site=site, dir='left')
 
-        # Metrics are updated after each full sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
         if np.abs(dist[-2]-dist[-1]) < threshold:
             break
+        # Metrics are updated after each full sweep
+
+    compressed_state, _ = can.left_normalize(compressed_state)
+    dist.append(metrics.overlap(compressed_state, raw_state))
+    sim.append(metrics.scalar_product(compressed_state, raw_state))
 
     return compressed_state, dist, sim
 

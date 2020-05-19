@@ -2,7 +2,7 @@ import numpy as np
 import activation_functions as act
 import metrics
 import initializations as init
-
+import canonical_forms as can
 
 def contract_L(bra, ket, site):
     """ Contracts all tensors to the left of a given site when updating
@@ -131,6 +131,7 @@ def gradient_descent(unweighted, site, dL_dM, activation_function, learning_rate
     updated_A = A - learning_rate*grad
     updated_A = np.reshape(updated_A, (unweighted[site].shape))
 
+    updated_M = updated_A
     if activation_function == 'linear':
         updated_M = updated_A
     elif activation_function == 'ReLU':
@@ -246,4 +247,8 @@ def compress(raw_state, bond_dim, threshold, activation_function):
         if np.abs(dist[-2]-dist[-1]) < threshold:
             break
 
+    compressed_state_weighted, _ = can.left_normalize(compressed_state_weighted)
+    dist.append(metrics.overlap(compressed_state_weighted, raw_state))
+    sim.append(metrics.scalar_product(compressed_state_weighted, raw_state))
+    print(dist[-1])
     return compressed_state_unweighted, compressed_state_weighted, dist, sim
