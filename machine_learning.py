@@ -3,6 +3,7 @@ import activation_functions as act
 import metrics
 import initializations as init
 import canonical_forms as can
+import copy
 
 def contract_L(bra, ket, site):
     """ Contracts all tensors to the left of a given site when updating
@@ -98,7 +99,7 @@ def contract_environment(bra, ket, site):
     return M
 
 
-def gradient_descent(unweighted, site, dL_dM, activation_function, learning_rate=1e-1):
+def gradient_descent(unweighted, site, dL_dM, activation_function, learning_rate=1e-1, layer='max_pool'):
     A = unweighted[site]
 
     if A.ndim == 3:
@@ -106,26 +107,41 @@ def gradient_descent(unweighted, site, dL_dM, activation_function, learning_rate
     elif A.ndim == 2:
         A = np.reshape(A, (A.shape[0]*A.shape[1]))
 
-    df_dA = A[:]
+    z = copy.deepcopy(A)
+    if layer == 'weighted':
+        for i in range(len(A)-1):
+            sum_before = 0
+            sum_after = 0
+            for j in range(i):
+                sum_before = sum_before + A[j] / (i-j)
+            for j in range(i+1, len(A)-1):
+                sum_after = sum_after + A[j] / (j-i)
+
+            z[i] = z[i] + sum_before + sum_after
+    elif layer == 'max_pool':
+        z[np.argmax(z)] = np.max(z)
+        z[z < np.max(z)] = 0.1
+
+    df_dA = z[:]
     if activation_function == 'linear':
         df_dA[:] = 1
     elif activation_function == 'ReLU':
-        df_dA[A > 0] = -1
-        df_dA[A <= 0] = 0
+        df_dA[z > 0] = -1
+        df_dA[z <= 0] = 0
     elif activation_function == 'arctan':
-        df_dA = 1/(A**2 + 1)
+        df_dA = 1/(z**2 + 1)
     elif activation_function == 'tanh':
-        df_dA = 1-np.tanh(A)**2
+        df_dA = 1-np.tanh(z)**2
     elif activation_function == 'arcsinh':
-        df_dA = 1/np.sqrt(A**2 + 1)
+        df_dA = 1/np.sqrt(z**2 + 1)
     elif activation_function == 'sigmoid':
-        df_dA = act.sigmoid(A) - act.sigmoid(A)**2
+        df_dA = act.sigmoid(z) - act.sigmoid(z)**2
     elif activation_function == 'softplus':
-        df_dA = 1/(1 + np.exp(-A))
+        df_dA = 1/(1 + np.exp(-z))
     elif activation_function == 'SiLU':
-        df_dA = (1 + np.exp(-A) + A * np.exp(-A)) / (1 + np.exp(A))**2
+        df_dA = (1 + np.exp(-z) + z * np.exp(-z)) / (1 + np.exp(z))**2
     elif activation_function == 'sinusoid':
-        df_dA = np.cos(A)
+        df_dA = np.cos(z)
 
     grad = dL_dM * df_dA
     updated_A = A - learning_rate*grad
