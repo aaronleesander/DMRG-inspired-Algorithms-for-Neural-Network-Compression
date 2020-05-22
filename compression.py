@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 import activation_functions as act
 import canonical_forms as can
@@ -160,33 +161,38 @@ def update_site(bra, ket, site, dir):
     return updated_site, next_site_M
 
 
-def compress(raw_state, bond_dim, threshold):
+def compress(raw_state, threshold, plot=0):
     """ Right normalizes a compressed state then sweeps left->right
         and right->left until a minimum is reached
         i.e. the difference in our metrics between sweeps is less than a
-        specified threshold
+        specified threshold up to the bond dimension of the raw state
 
     Args:
         raw_state: MPS to be compressed
-        bond_dim: Maximum bond dimension of compressed state
         threshold: Difference between sweeps under which a solution is found
+        plot: Whether or not to plot the compression values (0 off, 1 on)
 
     Returns:
-        compressed_state: Final compressed state
-        dist: List of overlap values after each sweep
-        sim: List of scalar product values (cosine similarity) after each sweep
+        compressions: Final compressed state at each bond dimension
+        best_dist: List of overlap values for each bond dimension
+        best_sim: List of cosine similarity values for each bond dimension
     """
 
-    phys_dim = raw_state[0].shape[0]
+    bond_dim_raw_state = raw_state[math.ceil(len(raw_state)/2)].shape[0]
+    max_bond_dim = 1
     compressed_state = init.initialize_random_normed_state_MPS(len(raw_state),
-                                                               bond_dim,
-                                                               phys_dim)
+                                                               bond_dim=max_bond_dim,
+                                                               phys_dim=raw_state[0].shape[0])
 
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)
     dist.append(metrics.overlap(compressed_state, raw_state))
     sim.append(metrics.scalar_product(compressed_state, raw_state))
+
+    best_dist = []
+    best_sim = []
+    compressions = []
     # We sweep left to right and then back right to left across the mixed state
     while True:
         # Left->right sweep
@@ -202,14 +208,55 @@ def compress(raw_state, bond_dim, threshold):
         # Metrics taken after each sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
-        if np.abs(dist[-2]-dist[-1]) < threshold:
-            break
+        if plot == 0:
+            print("Sim:", sim[-1], "Dist:", dist[-1], "Bond Dim:", max_bond_dim)
 
-    # Normalization to maintain length
-    compressed_state, _ = can.left_normalize(compressed_state)
-    dist.append(metrics.overlap(compressed_state, raw_state))
-    sim.append(metrics.scalar_product(compressed_state, raw_state))
-    return compressed_state, dist, sim
+        # Check if sweeps are still working
+        if np.abs(dist[-2]-dist[-1]) < threshold:
+            # Normalize to maintain length and update metrics
+            compressed_state, _ = can.left_normalize(compressed_state)
+            best_dist.append((metrics.overlap(compressed_state, raw_state)))
+            best_sim.append(metrics.scalar_product(compressed_state, raw_state))
+            compressions.append(compressed_state[:])
+
+            # Break if we cannot increase bond dimension anymore
+            if max_bond_dim+1 == bond_dim_raw_state:
+                break
+
+            # Update each tensor by increasing bond dimension
+            for i, tensor in enumerate(compressed_state):
+                if tensor.ndim == 2:
+                    new_tensor = np.zeros((tensor.shape[0], tensor.shape[1]+1))
+                    new_tensor[:tensor.shape[0], :tensor.shape[1]] = tensor
+                    compressed_state[i] = new_tensor
+
+                elif tensor.ndim == 3:
+                    new_tensor = np.zeros((tensor.shape[0]+1, tensor.shape[1]+1, tensor.shape[2]))
+                    new_tensor[:tensor.shape[0], :tensor.shape[1], :tensor.shape[2]] = tensor
+                    compressed_state[i] = new_tensor
+            max_bond_dim = compressed_state[math.ceil(len(compressed_state)/2)].shape[0]
+
+    if plot == 1:
+        loss = [100*(1-x) for x in best_sim]
+        plt.figure()
+        plt.title("Percentage Loss vs. Max Bond Dimension (Bits=%d, Base=%d, OrigBondDim=%d)"
+                  % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
+        plt.xlabel("Max Bond Dimension")
+        plt.ylabel("Loss (%)")
+
+        max_bond_dim = range(1, len(loss)+1)
+        plt.plot(max_bond_dim, loss)
+
+        # Marker at index where we have less than 5% loss
+        try:
+            index = next(x for x, value in enumerate(loss) if value < 5)+1
+            plt.axvline(index, color='r', linestyle='--')
+            plt.text(index+0.1, max(loss)/2, '5% Loss Threshold', color='r')
+            plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
+        except StopIteration:
+            print("No loss better than 5%")
+
+    return compressions, best_dist, best_sim
 
 
 def benchmark_compression(raw_state, threshold):
