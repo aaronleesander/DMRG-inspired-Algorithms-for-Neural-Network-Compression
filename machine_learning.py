@@ -1,9 +1,11 @@
-import numpy as np
-import activation_functions as act
-import metrics
-import initializations as init
-import canonical_forms as can
 import copy
+import numpy as np
+
+import activation_functions as act
+import canonical_forms as can
+import initializations as init
+import metrics
+
 
 def contract_L(bra, ket, site):
     """ Contracts all tensors to the left of a given site when updating

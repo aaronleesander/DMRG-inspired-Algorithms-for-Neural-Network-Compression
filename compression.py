@@ -1,6 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 import activation_functions as act
 import canonical_forms as can

@@ -1,8 +1,9 @@
+import math
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.sparse.linalg
 import scipy.sparse as sparse
-import math
 
 import contractions as con
 import initializations as init
@@ -123,7 +124,7 @@ def create_Hamiltonian(bra, MPO, ket, site):
     return H
 
 
-def update_site_DMRG(bra, MPO, ket, site, dir):
+def update_site(bra, MPO, ket, site, dir):
     """ Updates a given site of an MPS during the ground state search
 
     Args:
@@ -204,13 +205,14 @@ def update_site_DMRG(bra, MPO, ket, site, dir):
     return updated_site, next_site_M
 
 
-def ground_state_search(MPO, threshold):
+def ground_state_search(MPO, threshold, plot=0):
     """ Solves the eigenvalue equation HV = EV until we converge to an
         energy value.
 
     Args:
         MPO: List of tensors representing an operator
         threshold: Difference between sweeps under which a solution is found
+        plot: Whether or not to plot the eigenvalues (0 off, 1 on)
 
     Returns:
         eigenvalues: Ground state energy for each bond dimension
@@ -237,13 +239,13 @@ def ground_state_search(MPO, threshold):
     while True:
         # Left->right sweep
         for site in range(0, len(MPS)-1):
-            MPS[site], MPS[site+1] = update_site_DMRG(MPS, MPO, MPS,
+            MPS[site], MPS[site+1] = update_site(MPS, MPO, MPS,
                                                       site=site,
                                                       dir='right')
 
         # Right->left sweep
         for site in range(len(MPS)-1, 0, -1):
-            MPS[site], MPS[site-1] = update_site_DMRG(MPS, MPO, MPS,
+            MPS[site], MPS[site-1] = update_site(MPS, MPO, MPS,
                                                       site=site,
                                                       dir='left')
 
@@ -275,5 +277,13 @@ def ground_state_search(MPO, threshold):
                     new_tensor[:tensor.shape[0], :tensor.shape[1], :tensor.shape[2]] = tensor
                     MPS[i] = new_tensor
             max_bond_dim = MPS[math.ceil(len(MPS)/2)].shape[0]
+
+    if plot == 1:
+        plt.figure()
+        plt.title("Energy Eigenvalue vs. Bond Dimension")
+        plt.xlabel("Max Bond Dimension")
+        plt.ylabel("Energy")
+
+        plt.plot(range(1, len(eigenvalues)+1), eigenvalues)
 
     return eigenvalues, eigenstates, max_bond_dim

@@ -1,4 +1,5 @@
 import numpy as np
+
 import canonical_forms as can
 
 
@@ -143,4 +144,30 @@ def initialize_quantum_ising_MPO(num_sites, J, g):
     right_bound = np.squeeze(right_bound)  # Removes dummy index
 
     MPO = [left_bound] + [inner]*(num_sites-2) + [right_bound]
+    return MPO
+
+
+def initialize_random_MPO(num_sites, bond_dim, phys_dim):
+    """ Initializes a Matrix Product Operator containing random values
+    Args:
+        num_sites: Number of tensors in MPS
+        bond_dim: Virtual dimension between each tensor
+        phys_dim: Physical dimension
+
+    Returns:
+        MPO: List of tensors of length num_sites
+             Left Bound MPO[1] has shape (right_bond
+                                         x lower_phys_dim
+                                         x upper_phys_dim)
+             Inner MPO[i] has shape (left_bond
+                                    x right_bond
+                                    x lower_phys_dim
+                                    x upper_phys_dim)
+             Right Bound MPO[-1] has shape (phys_dim x left_bond)
+    """
+    M_1 = np.random.rand(bond_dim, phys_dim, phys_dim)
+    M_i = np.random.rand(bond_dim, bond_dim, phys_dim, phys_dim)
+    M_N = np.random.rand(bond_dim, phys_dim, phys_dim)
+
+    MPO = [M_1] + [M_i]*(num_sites-2) + [M_N]
     return MPO
