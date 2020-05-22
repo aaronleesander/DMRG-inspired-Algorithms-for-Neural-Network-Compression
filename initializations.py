@@ -102,11 +102,12 @@ def initialize_GHZ_state_MPS(num_sites):
     return MPS
 
 
-def initialize_quantum_ising_MPS(num_sites, g):
+def initialize_quantum_ising_MPO(num_sites, J, g):
     """ Initializes the Quantum Ising Model as a Matrix Product Operator
     Args:
         num_sites: Number of tensors in MPO
         g: Interaction parameter
+        J: Interaction type, attached to first pauli_z in MPO
 
     Returns:
         MPO: List of tensors of length num_sites
@@ -130,13 +131,13 @@ def initialize_quantum_ising_MPS(num_sites, g):
     zero = np.zeros((2, 2))
     identity = np.identity(2)
 
-    left_bound = np.array([identity, pauli_z, g*pauli_x])
+    left_bound = np.array([identity, -J*pauli_z, -g*pauli_x])
 
-    inner = np.array([np.array([identity, pauli_z, g*pauli_x]),
+    inner = np.array([np.array([identity, -J*pauli_z, -g*pauli_x]),
                       np.array([zero, zero, pauli_z]),
-                      np.array([zero, zero, np.identity(2)])])
+                      np.array([zero, zero, identity])])
 
-    right_bound = np.array([[g*pauli_x],
+    right_bound = np.array([[-g*pauli_x],
                             [pauli_z],
                             [identity]])
     right_bound = np.squeeze(right_bound)  # Removes dummy index

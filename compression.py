@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import activation_functions as act
 import canonical_forms as can
 import initializations as init
-import metrics as metrics
+import metrics
 
 
 def contract_L(bra, ket, site):
@@ -95,8 +95,8 @@ def update_site(bra, ket, site, dir):
     Returns:
         updated_site: Updated tensor at current site
         next_site_M: M tensor to replaced neighboring site
-                   either directly left or right of current site based on
-                   direction of sweep
+                     either directly left or right of current site based on
+                     direction of sweep
     """
 
     if site != 0:
@@ -199,16 +199,16 @@ def compress(raw_state, bond_dim, threshold):
             compressed_state[site], compressed_state[site-1] = update_site(compressed_state, raw_state,
                                                                            site=site, dir='left')
 
+        # Metrics taken after each sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
         if np.abs(dist[-2]-dist[-1]) < threshold:
             break
-        # Metrics are updated after each full sweep
 
+    # Normalization to maintain length
     compressed_state, _ = can.left_normalize(compressed_state)
     dist.append(metrics.overlap(compressed_state, raw_state))
     sim.append(metrics.scalar_product(compressed_state, raw_state))
-
     return compressed_state, dist, sim
 
 
@@ -228,6 +228,7 @@ def benchmark_compression(raw_state, threshold):
         loss: Percentage loss for each corresponding compressed state
         Plots Sweeps and Loss graphs
     """
+
     compressions = []
     loss = []
     phys_dim = raw_state[0].shape[0]
