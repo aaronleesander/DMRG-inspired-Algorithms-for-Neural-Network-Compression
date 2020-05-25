@@ -240,14 +240,14 @@ def ground_state_search(MPO, threshold, plot=0):
         # Left->right sweep
         for site in range(0, len(MPS)-1):
             MPS[site], MPS[site+1] = update_site(MPS, MPO, MPS,
-                                                      site=site,
-                                                      dir='right')
+                                                 site=site,
+                                                 dir='right')
 
         # Right->left sweep
         for site in range(len(MPS)-1, 0, -1):
             MPS[site], MPS[site-1] = update_site(MPS, MPO, MPS,
-                                                      site=site,
-                                                      dir='left')
+                                                 site=site,
+                                                 dir='left')
 
         # Update energy value after every full sweep
         E.append(con.calculate_expectation(MPS, MPO, MPS)
