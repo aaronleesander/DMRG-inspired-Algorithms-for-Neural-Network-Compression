@@ -147,15 +147,16 @@ def initialize_quantum_ising_MPO(num_sites, J, g):
     return MPO
 
 
-def initialize_random_MPO(num_sites, bond_dim, phys_dim):
-    """ Initializes a Matrix Product Operator containing random values
+def initialize_gate_MPO(num_sites):
+    """ Initializes the Quantum Ising Model as a Matrix Product Operator
     Args:
-        num_sites: Number of tensors in MPS
-        bond_dim: Virtual dimension between each tensor
-        phys_dim: Physical dimension
+        num_sites: Number of tensors in MPO
+        g: Interaction parameter
+        J: Interaction type, attached to first pauli_z in MPO
 
     Returns:
         MPO: List of tensors of length num_sites
+
              Left Bound MPO[1] has shape (right_bond
                                          x lower_phys_dim
                                          x upper_phys_dim)
@@ -164,10 +165,28 @@ def initialize_random_MPO(num_sites, bond_dim, phys_dim):
                                     x lower_phys_dim
                                     x upper_phys_dim)
              Right Bound MPO[-1] has shape (phys_dim x left_bond)
-    """
-    M_1 = np.random.rand(bond_dim, phys_dim, phys_dim)
-    M_i = np.random.rand(bond_dim, bond_dim, phys_dim, phys_dim)
-    M_N = np.random.rand(bond_dim, phys_dim, phys_dim)
 
-    MPO = [M_1] + [M_i]*(num_sites-2) + [M_N]
+             Initialization done by hand
+    """
+    XOR = np.array([[0, 1],
+                    [1, 0]])
+
+    AND = np.array([[0, 0],
+                    [0, 1]])
+
+    zero = np.zeros((2, 2))
+    identity = np.identity(2)
+
+    left_bound = np.array([identity, XOR, zero])
+
+    inner = np.array([np.array([identity, XOR, zero]),
+                      np.array([zero, zero, AND]),
+                      np.array([zero, zero, zero])])
+
+    right_bound = np.array([[identity],
+                            [AND],
+                            [identity]])
+    right_bound = np.squeeze(right_bound)  # Removes dummy index
+
+    MPO = [left_bound] + [inner]*(num_sites-2) + [right_bound]
     return MPO

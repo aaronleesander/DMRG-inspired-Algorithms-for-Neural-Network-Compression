@@ -228,7 +228,7 @@ def ground_state_search(MPO, threshold, plot=0):
     # Initial energy value
     E = []
     E.append(con.calculate_expectation(MPS, MPO, MPS))
-    print(E[-1])
+    print("Initial Energy:", E[-1])
 
     # Initialize result arrays
     eigenvalues = []
@@ -252,7 +252,7 @@ def ground_state_search(MPO, threshold, plot=0):
         # Update energy value after every full sweep
         E.append(con.calculate_expectation(MPS, MPO, MPS)
                  / metrics.scalar_product(MPS, MPS))
-        print("Energy:", E[-1], ", Bond Dim:", max_bond_dim)
+        print("Energy:", E[-1], "BondDim:", max_bond_dim)
 
         # Check if sweeps are still working
         if np.abs(E[-2]-E[-1]) < threshold:

@@ -85,6 +85,23 @@ def contract_R(bra, ket, site):
     return R
 
 
+def contract_environment(bra, ket, site):
+    if site != 0:
+        L = contract_L(bra, ket, site)
+    if site != len(bra)-1:
+        R = contract_R(bra, ket, site)
+    M = ket[site]
+
+    if site == 0:
+        M = np.einsum('ij, aj->ia', M, R)
+    elif site == len(bra)-1:
+        M = np.einsum('ij, aj->ai', L, M)
+    else:
+        M = np.einsum('ij, jbc, ab->iac', L, M, R)
+
+    return M
+
+
 def update_site(bra, ket, site, dir):
     """ Updates a given site of an MPS during the compression sweep
 
@@ -100,19 +117,7 @@ def update_site(bra, ket, site, dir):
                      direction of sweep
     """
 
-    if site != 0:
-        L = contract_L(bra, ket, site)
-    if site != len(bra)-1:
-        R = contract_R(bra, ket, site)
-    M = ket[site]
-
-    if site == 0:
-        updated_M = np.einsum('ij, aj->ia', M, R)
-    elif site == len(bra)-1:
-        updated_M = np.einsum('ij, aj->ai', L, M)
-    else:
-        updated_M = np.einsum('ij, jbc, ab->iac', L, M, R)
-
+    updated_M = contract_environment(bra, ket, site)
 
     # For a left->right sweep, similar to left normalization
     if dir == 'right':
@@ -208,8 +213,8 @@ def compress(raw_state, threshold, plot=0):
         # Metrics taken after each sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
-        if plot == 0:
-            print("Sim:", sim[-1], "Dist:", dist[-1], "Bond Dim:", max_bond_dim)
+        #if plot == 0:
+            #print("Sim:", sim[-1], "Dist:", dist[-1], "Bond Dim:", max_bond_dim)
 
         # Check if sweeps are still working
         if np.abs(dist[-2]-dist[-1]) < threshold:
@@ -217,6 +222,8 @@ def compress(raw_state, threshold, plot=0):
             compressed_state, _ = can.left_normalize(compressed_state)
             best_dist.append((metrics.overlap(compressed_state, raw_state)))
             best_sim.append(metrics.scalar_product(compressed_state, raw_state))
+            if plot == 0:
+                print("Sim:", best_sim[-1], "Dist:", best_dist[-1], "BondDim:", max_bond_dim)
             compressions.append(compressed_state[:])
 
             # Break if we cannot increase bond dimension anymore
@@ -246,7 +253,6 @@ def compress(raw_state, threshold, plot=0):
 
         max_bond_dim = range(1, len(loss)+1)
         plt.plot(max_bond_dim, loss)
-
         # Marker at index where we have less than 5% loss
         try:
             index = next(x for x, value in enumerate(loss) if value < 5)+1
@@ -255,6 +261,13 @@ def compress(raw_state, threshold, plot=0):
             plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
         except StopIteration:
             print("No loss better than 5%")
+
+        plt.figure()
+        plt.title("Euclidean Distance vs. Max Bond Dimension (Bits=%d, Base=%d, OrigBondDim=%d)"
+                  % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
+        plt.xlabel("Max Bond Dimension")
+        plt.ylabel("Euclidean Distance")
+        plt.plot(max_bond_dim, best_dist)
 
     return compressions, best_dist, best_sim
 
