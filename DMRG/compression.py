@@ -166,7 +166,7 @@ def update_site(bra, ket, site, dir):
     return updated_site, next_site_M
 
 
-def compress(raw_state, threshold, plot=0):
+def compress(raw_state, threshold, compressed_state=0, plot=0):
     """ Right normalizes a compressed state then sweeps left->right
         and right->left until a minimum is reached
         i.e. the difference in our metrics between sweeps is less than a
@@ -175,6 +175,7 @@ def compress(raw_state, threshold, plot=0):
     Args:
         raw_state: MPS to be compressed
         threshold: Difference between sweeps under which a solution is found
+        compressed_state: Initial starting state if necessary
         plot: Whether or not to plot the compression values (0 off, 1 on)
 
     Returns:
@@ -185,16 +186,16 @@ def compress(raw_state, threshold, plot=0):
 
     bond_dim_raw_state = raw_state[math.ceil(len(raw_state)/2)].shape[0]
     max_bond_dim = 1
-    compressed_state = init.initialize_random_normed_state_MPS(len(raw_state),
-                                                               bond_dim=max_bond_dim,
-                                                               phys_dim=raw_state[0].shape[0])
+    if compressed_state == 0:
+        compressed_state = init.initialize_random_normed_state_MPS(len(raw_state),
+                                                                bond_dim=max_bond_dim,
+                                                                phys_dim=raw_state[0].shape[0])
 
     # Initialize accuracy metrics
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)
     dist.append(metrics.overlap(compressed_state, raw_state))
     sim.append(metrics.scalar_product(compressed_state, raw_state))
-
     best_dist = []
     best_sim = []
     compressions = []
@@ -213,8 +214,6 @@ def compress(raw_state, threshold, plot=0):
         # Metrics taken after each sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
         sim.append(metrics.scalar_product(compressed_state, raw_state))
-        #if plot == 0:
-            #print("Sim:", sim[-1], "Dist:", dist[-1], "Bond Dim:", max_bond_dim)
 
         # Check if sweeps are still working
         if np.abs(dist[-2]-dist[-1]) < threshold:
@@ -228,6 +227,10 @@ def compress(raw_state, threshold, plot=0):
 
             # Break if we cannot increase bond dimension anymore
             if max_bond_dim+1 == bond_dim_raw_state:
+                break
+
+            # Break if changing bond dimension did not do enough
+            if len(best_dist) > 1 and np.abs(best_dist[-2]-best_dist[-1] < threshold):
                 break
 
             # Update each tensor by increasing bond dimension

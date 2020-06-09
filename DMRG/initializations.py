@@ -103,6 +103,35 @@ def initialize_GHZ_state_MPS(num_sites):
     return MPS
 
 
+def initialize_random_MPO(num_sites, bond_dim, phys_dim):
+    """ Initializes a Matrix Product State containing random values
+    Args:
+        num_sites: Number of tensors in MPS
+        bond_dim: Virtual dimension between each tensor
+        phys_dim: Physical dimension
+
+    Returns:
+        MPO: List of tensors of length num_sites
+
+             Left Bound MPO[1] has shape (right_bond
+                                         x lower_phys_dim
+                                         x upper_phys_dim)
+             Inner MPO[i] has shape (left_bond
+                                    x right_bond
+                                    x lower_phys_dim
+                                    x upper_phys_dim)
+            Right Bound MPO[N] has shape (right_bond
+                                         x lower_phys_dim
+                                         x upper_phys_dim)
+    """
+    M_1 = np.random.rand(bond_dim, phys_dim, phys_dim)
+    M_i = np.random.rand(bond_dim, bond_dim, phys_dim, phys_dim)
+    M_N = np.random.rand(bond_dim, phys_dim, phys_dim)
+
+    MPO = [M_1] + [M_i]*(num_sites-2) + [M_N]
+    return MPO
+
+
 def initialize_quantum_ising_MPO(num_sites, J, g):
     """ Initializes the Quantum Ising Model as a Matrix Product Operator
     Args:
@@ -120,7 +149,9 @@ def initialize_quantum_ising_MPO(num_sites, J, g):
                                     x right_bond
                                     x lower_phys_dim
                                     x upper_phys_dim)
-             Right Bound MPO[-1] has shape (phys_dim x left_bond)
+             Right Bound MPO[N] has shape (right_bond
+                                         x lower_phys_dim
+                                         x upper_phys_dim)
 
              Initialization done by hand
     """
@@ -164,7 +195,9 @@ def initialize_gate_MPO(num_sites):
                                     x right_bond
                                     x lower_phys_dim
                                     x upper_phys_dim)
-             Right Bound MPO[-1] has shape (phys_dim x left_bond)
+            Right Bound MPO[N] has shape (right_bond
+                                         x lower_phys_dim
+                                         x upper_phys_dim)
 
              Initialization done by hand
     """
