@@ -86,8 +86,8 @@ def contract_R(bra, MPO, ket, site):
 
 
 def create_Hamiltonian(bra, MPO, ket, site):
-    """ Contracts all tensors to the right of a given site when updating
-        a site during ground state search
+    """ Contracts MPS-MPO-MPS expectation value with missing site
+        to give Hamiltonian derivative
 
     Args:
         bra: MPS used as the bra
