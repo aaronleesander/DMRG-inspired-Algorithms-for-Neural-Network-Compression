@@ -6,12 +6,14 @@ from MPO_hyperparameter_v2 import *
 
 # Required to work in Jupyter
 tf.compat.v1.app.flags.DEFINE_string('f', '', 'kernel')
+FLAGS(sys.argv, known_only=True)
 
 r_1 = FLAGS.tt_ranks_1
 r_2 = FLAGS.tt_ranks_2
 input_node=FLAGS.input_node
 output_node=FLAGS.output_node
 hidden1_node=FLAGS.hidden_node
+
 #TTO_layer1
 inp_modes1 =  [4,7,7,4]
 out_modes1 =  [4,4,4,4]

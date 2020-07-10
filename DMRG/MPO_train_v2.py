@@ -56,6 +56,9 @@ def mnist(inp):
             #if i%1000 == 0:
             accuracy_score = sess.run(accuracy, feed_dict={x:inp.test.images,y_:inp.test.labels})
             #print('step={},lr={}'.format(step,lr))
+            if accuracy_score < 0.1:
+                print("Guessing")
+                break
             if best_acc< accuracy_score:
                 best_acc = accuracy_score
 
@@ -73,14 +76,6 @@ def mnist(inp):
 
         accuracy_score=sess.run(accuracy,feed_dict={x:inp.test.images,y_:inp.test.labels})
         print("After %s trainning step(s),best accuracy=%g" %(step,best_acc))
-        ######################
-        #print("Weight matrix: {0}".format(sess.run(var[0])))
-        #for v in var:
-        #    print(v)
-        #print(inference)
-        # print(y[1])
-        # print(y[2])
-        ######################
     return weights
 
 def main(argv=None):
