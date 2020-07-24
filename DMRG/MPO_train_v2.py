@@ -20,8 +20,8 @@ MOVING_DECAY=0.99
 #tf.set_random_seed(seed)
 
 def mnist(inp):
-    x=tf.compat.v1.placeholder(tf.float32,[None,inference.input_node],name='x-input')
-    y_=tf.compat.v1.placeholder(tf.float32,[None,inference.output_node],name='y-input')
+    x=tf.compat.v1.placeholder(tf.float32,[None,FLAGS.input_node],name='x-input')
+    y_=tf.compat.v1.placeholder(tf.float32,[None,FLAGS.output_node],name='y-input')
     # regularizer = tf.contrib.layers.l2_regularizer(REGULARIZER_RATE)
 
     y=inference.inference(x)
