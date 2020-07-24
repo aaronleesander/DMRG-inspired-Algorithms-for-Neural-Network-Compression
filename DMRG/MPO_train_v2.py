@@ -19,13 +19,13 @@ MOVING_DECAY=0.99
 #seed =12345
 #tf.set_random_seed(seed)
 
-def mnist(inp):
-    x=tf.compat.v1.placeholder(tf.float32,[None,FLAGS.input_node],name='x-input')
-    y_=tf.compat.v1.placeholder(tf.float32,[None,FLAGS.output_node],name='y-input')
+def mnist(inp, r_1, r_2):
+    x = tf.compat.v1.placeholder(tf.float32, [None, FLAGS.input_node], name='x-input')
+    y_ = tf.compat.v1.placeholder(tf.float32, [None, FLAGS.output_node], name='y-input')
     # regularizer = tf.contrib.layers.l2_regularizer(REGULARIZER_RATE)
 
-    y=inference.inference(x)
-    global_step=tf.Variable(0,trainable=False)
+    y = inference.inference(x, r_1, r_2)
+    global_step = tf.Variable(0, trainable=False)
 
     # ema = tf.train.ExponentialMovingAverage(MOVING_DECAY, global_step)
     # ema_op = ema.apply(tf.trainable_variables())
@@ -83,9 +83,10 @@ def mnist(inp):
         #####################################################################
     return weights
 
-def main(argv=None):
+def main(r_1, r_2):
     inp=input_data.read_data_sets("./data/",validation_size=0,one_hot=True)
-    weights = mnist(inp)
+    weights = mnist(inp, r_1, r_2)
+    tf.compat.v1.reset_default_graph()
     return weights
 
 if __name__=='__main__':
