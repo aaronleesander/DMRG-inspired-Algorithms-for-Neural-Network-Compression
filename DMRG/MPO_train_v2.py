@@ -64,6 +64,7 @@ def mnist(inp):
 
 
                 #####################################################
+                # Outputs weights purely as numerical weights by layer
                 var = [v for v in tf.compat.v1.trainable_variables()]
                 weights = []
                 for v in var:
@@ -76,6 +77,10 @@ def mnist(inp):
 
         accuracy_score=sess.run(accuracy,feed_dict={x:inp.test.images,y_:inp.test.labels})
         print("After %s trainning step(s),best accuracy=%g" %(step,best_acc))
+        #####################################################################
+        # Resets the parameters
+        tf.compat.v1.get_variable_scope().reuse_variables()
+        #####################################################################
     return weights
 
 def main(argv=None):
