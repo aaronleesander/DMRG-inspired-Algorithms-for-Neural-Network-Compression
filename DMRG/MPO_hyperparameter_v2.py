@@ -10,10 +10,10 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('input_node', 784, 'picture size you want to input to the network')
 flags.DEFINE_integer('hidden_node', 256, 'number of hidden units')
 flags.DEFINE_integer('output_node', 10, 'labels number you want to input to the network')
-flags.DEFINE_integer('global_step', 100, 'total step the network to train')
+flags.DEFINE_integer('global_step', 500, 'total step the network to train')
 
-flags.DEFINE_integer('tt_ranks_1',  8, 'ranks of the first tensor train')
-flags.DEFINE_integer('tt_ranks_2',  8, 'ranks of the second tensor train')
+flags.DEFINE_integer('tt_ranks_1',  16, 'ranks of the first tensor train')
+flags.DEFINE_integer('tt_ranks_2',  16, 'ranks of the second tensor train')
 flags.DEFINE_integer('batch_size', 100, 'Batch size.  ')
 flags.DEFINE_float('REGULARIZER_RATE',  0.0001, 'L2 regularizer_rate')
 flags.DEFINE_float('LEARNING_RATE_BASE',  0.8, 'L2 learning_rate_base')
