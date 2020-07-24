@@ -59,7 +59,7 @@ def mnist(inp):
             if accuracy_score < 0.1:
                 print("Guessing")
                 break
-            if best_acc< accuracy_score:
+            if best_acc < accuracy_score:
                 best_acc = accuracy_score
 
 
