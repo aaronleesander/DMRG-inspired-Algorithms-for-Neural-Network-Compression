@@ -86,7 +86,11 @@ def mnist(inp, r_1, r_2):
 def main(r_1, r_2):
     inp=input_data.read_data_sets("./data/",validation_size=0,one_hot=True)
     weights = mnist(inp, r_1, r_2)
+    ########################################################################
+    # Resets graph so that we can retrain
     tf.compat.v1.reset_default_graph()
+    ########################################################################
+
     return weights
 
 if __name__=='__main__':
