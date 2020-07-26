@@ -45,42 +45,58 @@ def mnist(inp, r_1, r_2):
     correct_prediction=tf.equal(tf.argmax(input=y,axis=1),tf.argmax(input=y_,axis=1))
     accuracy=tf.reduce_mean(input_tensor=tf.cast(correct_prediction,tf.float32))
 
+    def train_session():
+        with tf.compat.v1.Session() as sess:
+            init_op = tf.compat.v1.global_variables_initializer()
+            sess.run(init_op)
+            best_acc = 0
+            broken = 0
+            change_counter = 0
+            for i in range(TRAINING_STEPS):
+                xs,ys = inp.train.next_batch(BATCH_SIZE)
+                _,step,lr = sess.run([train_steps,global_step,learning_rate],feed_dict={x:xs,y_:ys})
+                #if i%1000 == 0:
+                accuracy_score = sess.run(accuracy, feed_dict={x:inp.test.images,y_:inp.test.labels})
+                #print('step={},lr={}'.format(step,lr))
+                if accuracy_score < 0.1:
+                    if i == 0:
+                        weights = []
+                    print("Guessing")
+                    broken = 1
+                    break
+                if best_acc < accuracy_score:
+                    best_acc = accuracy_score
+                    change_counter = 0
+                    #####################################################
+                    # Outputs weights purely as numerical weights by layer
+                    var = [v for v in tf.compat.v1.trainable_variables()]
+                    weights = []
+                    for v in var:
+                        weights.append(sess.run(v))
 
-    with tf.compat.v1.Session() as sess:
-        init_op = tf.compat.v1.global_variables_initializer()
-        sess.run(init_op)
-        best_acc = 0
-        for i in range(TRAINING_STEPS):
-            xs,ys = inp.train.next_batch(BATCH_SIZE)
-            _,step,lr = sess.run([train_steps,global_step,learning_rate],feed_dict={x:xs,y_:ys})
-            #if i%1000 == 0:
-            accuracy_score = sess.run(accuracy, feed_dict={x:inp.test.images,y_:inp.test.labels})
-            #print('step={},lr={}'.format(step,lr))
-            if accuracy_score < 0.1:
-                print("Guessing")
-                break
-            if best_acc < accuracy_score:
-                best_acc = accuracy_score
 
+                    print('Accuracy at step %s: %s' % (i, accuracy_score))
+                else:
+                    change_counter += 1
+                    if change_counter == 50:
+                        break
+                    #####################################################
 
-                #####################################################
-                # Outputs weights purely as numerical weights by layer
-                var = [v for v in tf.compat.v1.trainable_variables()]
-                weights = []
-                for v in var:
-                    weights.append(sess.run(v))
+            accuracy_score=sess.run(accuracy,feed_dict={x:inp.test.images,y_:inp.test.labels})
+            print("After %s trainning step(s),best accuracy=%g" %(step,best_acc))
+            ####################################################################
+            # Resets the parameters
+            tf.compat.v1.get_variable_scope().reuse_variables()
+            ####################################################################
+        return weights, broken
 
+    #############################################
+    weights, broken = train_session()
+    while broken:
+        #tf.compat.v1.reset_default_graph()
+        weights, broken = train_session()
+    ############################################
 
-                #####################################################
-                print('Accuracy at step %s: %s' % (i, accuracy_score))
-
-
-        accuracy_score=sess.run(accuracy,feed_dict={x:inp.test.images,y_:inp.test.labels})
-        print("After %s trainning step(s),best accuracy=%g" %(step,best_acc))
-        #####################################################################
-        # Resets the parameters
-        tf.compat.v1.get_variable_scope().reuse_variables()
-        #####################################################################
     return weights
 
 def main(r_1, r_2):
