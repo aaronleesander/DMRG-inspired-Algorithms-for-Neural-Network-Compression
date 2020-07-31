@@ -172,7 +172,7 @@ def vector_to_left_canonical_MPS(tensor, phys_dim, num_sites):
         tensor = np.diag(S_vector) @ V
 
     # Final A tensor is the remaining tensor after all other legs removed
-    A_tensors.append(tensor)
+    A_tensors.append(tensor.T)
     return A_tensors
 
 
