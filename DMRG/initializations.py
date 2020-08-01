@@ -40,6 +40,31 @@ def initialize_random_normed_state_MPS(num_sites, bond_dim, phys_dim):
     return MPS
 
 
+def initialize_random_MPS_with_changing_phys_dim(phys_dim, num_sites, bond_dim):
+    """ Initializes and MPS with different physical dimensions at each site
+
+    Args:
+        phys_dim: List of physical dimensions by site
+        num_sites: Integer of total number of sites
+        bond_dim: Integer of required bond dimensions
+
+    Returns:
+        MPS: List of left and right normalized
+             tensors of MPS with given physical and bond dimensions
+    """
+    MPS = []
+    M_1 = np.random.rand(phys_dim[0], bond_dim)
+    MPS.append(M_1)
+    for i in range(1, num_sites-1):
+        M_i = np.random.rand(bond_dim, bond_dim, phys_dim[i])
+        MPS.append(M_i)
+    M_N = np.random.rand(phys_dim[-1], bond_dim)
+    MPS.append(M_N)
+
+    MPS, _ = can.left_normalize(MPS)
+    MPS, _ = can.right_normalize(MPS)
+    return MPS
+
 def initialize_W_state_MPS(num_sites):
     """ Initializes the W-state as a Matrix Product State
     Args:
