@@ -203,7 +203,7 @@ def compress_layer(raw_state, phys_dim, threshold, compressed_state=0, plot=0):
     return compressions, best_dist, best_sim
 
 
-def test_overall_accuracy_FC2(compressed_MPS_0, compressed_MPS_1, sigma_0, sigma_1, sigma_2, threshold):
+def test_overall_accuracy_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0, MPO_1_orig, bias_1, sigma_0, sigma_1, sigma_2):
     acc_compressed = []
     time_compressed = []
     params = []
@@ -216,40 +216,40 @@ def test_overall_accuracy_FC2(compressed_MPS_0, compressed_MPS_1, sigma_0, sigma
 
     for new_dim in range(1, longest+1):
         if new_dim < shortest:
-            MPS_0_test = compressed_MPS_0[new_dim-1]
-            MPS_1_test = compressed_MPS_1[new_dim-1]
+            MPS_0 = compressed_MPS_0[new_dim-1]
+            MPS_1 = compressed_MPS_1[new_dim-1]
         else:
             if shortest == len(compressed_MPS_0):
-                MPS_0_test = compressed_MPS_0[-1]
-                MPS_1_test = compressed_MPS_1[new_dim-1]
+                MPS_0 = compressed_MPS_0[-1]
+                MPS_1 = compressed_MPS_1[new_dim-1]
             elif shortest == len(compressed_MPS_1):
-                MPS_0_test = compressed_MPS_0[new_dim-1]
-                MPS_1_test = compressed_MPS_1[-1]
+                MPS_0 = compressed_MPS_0[new_dim-1]
+                MPS_1 = compressed_MPS_1[-1]
 
-        dim_0 = [MPS_0_test[0].shape[1], MPS_0_test[1].shape[1], MPS_0_test[2].shape[1], MPS_0_test[3].shape[1]]
-        dim_1 = [MPS_1_test[0].shape[1], MPS_1_test[1].shape[1], MPS_1_test[2].shape[1], MPS_1_test[3].shape[1]]
-        MPO_0_test = open_legs(MPS_0_test, sigma_0, sigma_1, bond_dim=dim_0)
-        MPO_1_test = open_legs(MPS_1_test, sigma_1, sigma_2, bond_dim=dim_1)
+        dim_0 = [MPS_0[0].shape[1], MPS_0[1].shape[1], MPS_0[2].shape[1], MPS_0[3].shape[1]]
+        dim_1 = [MPS_1[0].shape[1], MPS_1[1].shape[1], MPS_1[2].shape[1], MPS_1[3].shape[1]]
+        MPO_0 = open_legs(MPS_0, sigma_0, sigma_1, bond_dim=dim_0)
+        MPO_1 = open_legs(MPS_1, sigma_1, sigma_2, bond_dim=dim_1)
 
         total_params = 0
-        for tensor in MPO_0_test:
+        for tensor in MPO_0:
             total_params += tensor.size
-        for tensor in MPO_1_test:
+        for tensor in MPO_1:
             total_params += tensor.size
         params.append(total_params)
 
-        acc, t = FC2(MPO_0_test, bias_0, MPO_1_test, bias_1)
+        acc, t = FC2(MPO_0, bias_0, MPO_1, bias_1)
         acc_compressed.append(acc)
         time_compressed.append(t)
 
     params_orig = 0
-    for tensor in MPO_0:
+    for tensor in MPO_0_orig:
         params_orig += tensor.size
-    for tensor in MPO_1:
+    for tensor in MPO_1_orig:
         params_orig += tensor.size
 
     params = np.array(params)/params_orig*100
-    acc_orig, time_orig = FC2(MPO_0, bias_0, MPO_1, bias_1)
+    acc_orig, time_orig = FC2(MPO_0_orig, bias_0, MPO_1_orig, bias_1)
 
     x = range(1, len(compressed_MPS_0)+1)
     data1 = acc
@@ -262,7 +262,7 @@ def test_overall_accuracy_FC2(compressed_MPS_0, compressed_MPS_1, sigma_0, sigma
     ax1.set_ylabel('Accuracy [%]', color=color)
     ax1.plot(x, acc_compressed, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    ax1.axhline(threshold, color='r', linestyle='--')
+    ax1.axhline(acc_orig, color='r', linestyle='--')
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 

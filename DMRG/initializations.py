@@ -65,6 +65,7 @@ def initialize_random_MPS_with_changing_phys_dim(phys_dim, num_sites, bond_dim):
     MPS, _ = can.right_normalize(MPS)
     return MPS
 
+
 def initialize_W_state_MPS(num_sites):
     """ Initializes the W-state as a Matrix Product State
     Args:
