@@ -100,6 +100,9 @@ def mnist(inp, r_1, r_2):
     return weights
 
 def main(r_1, r_2):
+    #inp = tf.tensorflow_datasets.load('mnist')
+    #inp = tf.keras.datasets.mnist.load_data
+
     inp=input_data.read_data_sets("./data/",validation_size=0,one_hot=True)
     weights = mnist(inp, r_1, r_2)
     ########################################################################
