@@ -203,7 +203,7 @@ def compress_layer(raw_state, phys_dim, threshold, compressed_state=0, plot=0):
     return compressions, best_dist, best_sim
 
 
-def test_overall_accuracy_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0, MPO_1_orig, bias_1, sigma_0, sigma_1, sigma_2):
+def test_overall_loss_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0, MPO_1_orig, bias_1, sigma_0, sigma_1, sigma_2):
     acc_compressed = []
     time_compressed = []
     params = []
@@ -248,26 +248,22 @@ def test_overall_accuracy_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bi
     for tensor in MPO_1_orig:
         params_orig += tensor.size
 
-    params = np.array(params)/params_orig*100
     acc_orig, time_orig = FC2(MPO_0_orig, bias_0, MPO_1_orig, bias_1)
 
     x = range(1, len(compressed_MPS_0)+1)
-    data1 = acc
-    data2 = params
-
+    loss = [acc_orig-x for x in acc_compressed]
+    params = np.array(params)/params_orig*100
     fig, ax1 = plt.subplots()
 
     color = 'tab:red'
     ax1.set_xlabel('Compressed Dimension')
     ax1.set_ylabel('Accuracy [%]', color=color)
-    ax1.plot(x, acc_compressed, color=color)
+    ax1.plot(x, loss, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    ax1.axhline(acc_orig, color='r', linestyle='--')
 
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-
+    ax2 = ax1.twinx()
     color = 'tab:blue'
-    ax2.set_ylabel('Compression [%]', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('Compression [%]', color=color)
     ax2.plot(x, params, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
 

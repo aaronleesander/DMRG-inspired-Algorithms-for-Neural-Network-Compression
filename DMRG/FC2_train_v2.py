@@ -7,8 +7,8 @@ import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 from tensorflow.examples.tutorials.mnist import input_data
 
-import MPO_inference_v2 as inference
-from MPO_hyperparameter_v2 import *
+import FC2_inference_v2 as inference
+from FC2_hyperparameter_v2 import *
 
 BATCH_SIZE=FLAGS.batch_size
 TRAINING_STEPS=FLAGS.global_step
