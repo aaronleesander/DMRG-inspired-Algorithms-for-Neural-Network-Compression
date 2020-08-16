@@ -78,8 +78,8 @@ def mnist(inp, r_1, r_2, r_3):
                     print('Accuracy at step %s: %s' % (i, accuracy_score))
                 else:
                     change_counter += 1
-                    if change_counter == 50:
-                        break
+                    #if change_counter == 50:
+                        #break
                     #####################################################
 
             accuracy_score=sess.run(accuracy,feed_dict={x:inp.test.images,y_:inp.test.labels})
