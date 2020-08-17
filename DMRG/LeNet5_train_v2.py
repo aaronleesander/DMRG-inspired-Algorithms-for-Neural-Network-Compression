@@ -7,8 +7,8 @@ import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 from tensorflow.examples.tutorials.mnist import input_data
 
-import inference_LeNet5 as inference
-from hyperparameter_LeNet5 import *
+import LeNet5_inference_v2 as inference
+from LeNet5_hyperparameter_v2 import *
 
 BATCH_SIZE=FLAGS.batch_size
 TRAINING_STEPS=FLAGS.global_step

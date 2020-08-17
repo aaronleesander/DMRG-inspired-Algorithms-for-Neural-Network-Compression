@@ -1,8 +1,8 @@
 
 import numpy as np
 import tensorflow as tf
-import MPO_tt_v2 as tt
-from hyperparameter_LeNet5 import *
+import tt_v2 as tt
+from LeNet5_hyperparameter_v2 import *
 
 # Required to work in Jupyter
 tf.compat.v1.app.flags.DEFINE_string('f', '', 'kernel')

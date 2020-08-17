@@ -257,7 +257,7 @@ def test_overall_loss_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0
 
     color = 'tab:red'
     ax1.set_xlabel('Compressed Dimension')
-    ax1.set_ylabel('Accuracy [%]', color=color)
+    ax1.set_ylabel('Loss [%]', color=color)
     ax1.plot(x, loss, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
 
@@ -267,7 +267,7 @@ def test_overall_loss_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0
     ax2.plot(x, params, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
 
-    plt.title('Accuracy vs. Compressed Dimension, OrigDim=%d' %(len(compressed_MPS_0)))
+    plt.title('Loss vs. Compressed Dimension, OrigDim=%d' %(len(compressed_MPS_0)))
 
     fig.tight_layout()
     plt.show()
