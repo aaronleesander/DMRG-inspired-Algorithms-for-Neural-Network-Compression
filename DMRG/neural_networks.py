@@ -242,11 +242,12 @@ def test_overall_loss_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0
         acc_compressed.append(acc)
         time_compressed.append(t)
 
-    params_orig = 0
-    for tensor in MPO_0_orig:
-        params_orig += tensor.size
-    for tensor in MPO_1_orig:
-        params_orig += tensor.size
+    params_orig = 768*256 + 256*10
+    # params_orig = 0
+    # for tensor in MPO_0_orig:
+    #     params_orig += tensor.size
+    # for tensor in MPO_1_orig:
+    #     params_orig += tensor.size
 
     acc_orig, time_orig = FC2(MPO_0_orig, bias_0, MPO_1_orig, bias_1)
 
@@ -327,3 +328,53 @@ def FC2(MPO_0, bias_0, MPO_1, bias_1):
     acc = correct/total*100
     t = end-start
     return acc, t
+
+
+def vector_to_left_canonical_MPS_NN(tensor, phys_dim):
+    """ Decomposes a vector of length d^L (phys_dim^num_sites) into a
+        left-canonical MPS. Final site will not be canonical due to
+        original norm
+
+    Args:
+        tensor: Vector of length that can be described by d^L (Ex: 512 = 2^9)
+        phys_dim: Physical dimension necessary on MPS at each site (d)
+        num_sites: Number of sites necessary (L)
+
+    Returns:
+        A_tensors: Left canonical form of input MPS
+    """
+
+    A_tensors = []
+    num_sites = len(phys_dim)
+    for i in range(0, num_sites-1):
+        # Remove one leg such that tensor has shape (d, d^(L-1)) with L sites
+        if i == 0:
+            reshaped_tensor = np.reshape(tensor, (phys_dim[i],
+                                                  tensor.shape[0]//phys_dim[i]))
+        else:
+            reshaped_tensor = np.reshape(tensor, (A_tensors[-1].shape[1]*phys_dim[i],
+                                                  tensor.shape[1]//phys_dim[i]))       
+        #print("Reshape:", reshaped_tensor.shape)
+
+        # SVD and save the rank for the next iteration of the loop
+        U, S_vector, V = np.linalg.svd(reshaped_tensor, full_matrices=False)
+        rank = len(S_vector)
+
+        if i == 0:
+            # No need to reshape since U is already a left-canonical matrix
+            A_tensors.append(U)
+        else:
+            # Break apart first leg of U into a left bond dimension
+            # and physical dimension
+            U = np.reshape(U, (A_tensors[-1].shape[1], phys_dim[i], U.shape[1]))
+            # Transpose so that we have the correct shape
+            # (left bond, right bond, physical dimension)
+            U = np.transpose(U, (0, 2, 1))
+            A_tensors.append(U)
+
+        # We recreate the tensor with the remaining legs
+        tensor = np.diag(S_vector) @ V
+    # Final A tensor is the remaining tensor after all other legs removed
+    A_tensors.append(tensor.T)
+
+    return A_tensors
