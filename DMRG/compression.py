@@ -6,7 +6,7 @@ import activation_functions as act
 import canonical_forms as can
 import initializations as init
 import metrics
-
+import neural_networks as nn
 
 def contract_L(bra, ket, site):
     """ Contracts all tensors to the left of a given site when updating
@@ -248,29 +248,47 @@ def compress(raw_state, threshold, compressed_state=0, plot=0):
 
     if plot == 1:
         loss = [100*(1-x) for x in best_sim]
-        plt.figure()
-        plt.title("Percentage Loss vs. Max Bond Dimension (Bits=%d, Base=%d, OrigBondDim=%d)"
-                  % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
-        plt.xlabel("Max Bond Dimension")
-        plt.ylabel("Loss (%)")
-
+        params = [nn.calculate_params(x) for x in compressions]
         max_bond_dim = range(1, len(loss)+1)
-        plt.plot(max_bond_dim, loss)
-        # Marker at index where we have less than 5% loss
-        try:
-            index = next(x for x, value in enumerate(loss) if value < 5)+1
-            plt.axvline(index, color='r', linestyle='--')
-            plt.text(index+0.1, max(loss)/2, '5% Loss Threshold', color='r')
-            plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
-        except StopIteration:
-            print("No loss better than 5%")
 
-        plt.figure()
-        plt.title("Euclidean Distance vs. Max Bond Dimension (Bits=%d, Base=%d, OrigBondDim=%d)"
-                  % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
-        plt.xlabel("Max Bond Dimension")
-        plt.ylabel("Euclidean Distance")
-        plt.plot(max_bond_dim, best_dist)
+        fig, ax1 = plt.subplots()
+        color = 'tab:red'
+        ax1.set_xlabel('Compressed Dimension')
+        ax1.set_ylabel('Loss [%]', color=color)
+        ax1.plot(max_bond_dim, loss, color=color)
+        ax1.tick_params(axis='y', labelcolor=color)
+
+        ax2 = ax1.twinx()
+        color = 'tab:blue'
+        ax2.set_ylabel('Compression [%]', color=color)
+        ax2.plot(max_bond_dim, params, color=color)
+        ax2.tick_params(axis='y', labelcolor=color)
+        plt.show()
+        # loss = [100*(1-x) for x in best_sim]
+
+        # plt.figure()
+        # plt.title("Loss vs. Max Bond Dimension (OrigBondDim=%d)"
+        #           % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
+        # plt.xlabel("Max Bond Dimension")
+        # plt.ylabel("Loss (%)")
+
+        # max_bond_dim = range(1, len(loss)+1)
+        # plt.plot(max_bond_dim, loss)
+        # # Marker at index where we have less than 5% loss
+        # try:
+        #     index = next(x for x, value in enumerate(loss) if value < 5)+1
+        #     plt.axvline(index, color='r', linestyle='--')
+        #     plt.text(index+0.1, max(loss)/2, '5% Loss Threshold', color='r')
+        #     plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
+        # except StopIteration:
+        #     print("No loss better than 5%")
+
+        # plt.figure()
+        # plt.title("Euclidean Distance vs. Max Bond Dimension (OrigBondDim=%d)"
+        #           % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
+        # plt.xlabel("Max Bond Dimension")
+        # plt.ylabel("Euclidean Distance")
+        # plt.plot(max_bond_dim, best_dist)
 
     return compressions, best_dist, best_sim
 
