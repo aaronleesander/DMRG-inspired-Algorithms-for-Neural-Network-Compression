@@ -159,13 +159,13 @@ def compress_layer(raw_state, phys_dim, threshold, compressed_state=0, plot=0):
 
         # Metrics taken after each sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
-        sim.append(metrics.scalar_product(compressed_state, raw_state))
+        sim.append(metrics.similarity(compressed_state, raw_state))
         # Check if sweeps are still working
         if np.abs(dist[-2]-dist[-1]) < threshold:
             # Normalize to maintain length and update metrics
             #compressed_state, _ = can.left_normalize(compressed_state)
-            best_dist.append((metrics.overlap(compressed_state, raw_state)))
-            best_sim.append(metrics.scalar_product(compressed_state, raw_state))
+            best_dist.append(dist[-1])
+            best_sim.append(sim[-1])
             if plot == 0:
                 print("Sim:", best_sim[-1], "Dist:", best_dist[-1], "BondDim:", max_bond_dim)
             compressions.append(compressed_state[:])
