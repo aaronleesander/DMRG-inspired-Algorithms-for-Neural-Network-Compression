@@ -38,3 +38,20 @@ def overlap(A, B):
     overlap = np.sqrt(scalar_product(A, A) + scalar_product(B, B)
                       - scalar_product(A, B) - scalar_product(B, A))
     return overlap
+
+
+def similarity(A, B)
+    """ Calculates the cosine similarity between two Matrix Product States
+    Args:
+        A: first MPS
+        B: second MPS
+
+    Returns:
+        similarity: Cosine similarity
+    """
+    dot = scalar_product(A, B)
+    len_A = scalar_product(A, A)
+    len_B = scalar_product(B, B)
+
+    similarity = dot/(len_A*len_B)
+    return similarity
