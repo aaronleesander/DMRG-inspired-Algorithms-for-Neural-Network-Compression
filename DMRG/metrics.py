@@ -40,7 +40,7 @@ def overlap(A, B):
     return overlap
 
 
-def similarity(A, B)
+def similarity(A, B):
     """ Calculates the cosine similarity between two Matrix Product States
     Args:
         A: first MPS
@@ -50,8 +50,6 @@ def similarity(A, B)
         similarity: Cosine similarity
     """
     dot = scalar_product(A, B)
-    len_A = scalar_product(A, A)
     len_B = scalar_product(B, B)
-
-    similarity = dot/(len_A*len_B)
+    similarity = dot/len_B
     return similarity
