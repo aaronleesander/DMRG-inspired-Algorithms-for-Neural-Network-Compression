@@ -213,16 +213,15 @@ def compress(raw_state, threshold, compressed_state=0, plot=0):
 
         # Metrics taken after each sweep
         dist.append(metrics.overlap(compressed_state, raw_state))
-        sim.append(metrics.scalar_product(compressed_state, raw_state))
+        sim.append(metrics.similarity(compressed_state, raw_state))
 
         # Check if sweeps are still working
         if np.abs(dist[-2]-dist[-1]) < threshold:
             # Normalize to maintain length and update metrics
             compressed_state, _ = can.left_normalize(compressed_state)
-            best_dist.append((metrics.overlap(compressed_state, raw_state)))
-            best_sim.append(metrics.scalar_product(compressed_state, raw_state))
-            if plot == 0:
-                print("Sim:", best_sim[-1], "Dist:", best_dist[-1], "BondDim:", max_bond_dim)
+            best_dist.append(dist[-1])
+            best_sim.append(sim[-1])
+            print("Sim:", best_sim[-1], "Dist:", best_dist[-1], "BondDim:", max_bond_dim)
             compressions.append(compressed_state[:])
 
             # Break if we cannot increase bond dimension anymore
@@ -247,45 +246,43 @@ def compress(raw_state, threshold, compressed_state=0, plot=0):
             max_bond_dim = compressed_state[math.ceil(len(compressed_state)/2)].shape[0]
 
     if plot == 1:
-        loss = [100*(1-x) for x in best_sim]
-        params = [nn.calculate_params(x) for x in compressions]
-        max_bond_dim = range(1, len(loss)+1)
-
+        max_bond_dim = range(1, len(best_dist)+1)
         fig, ax1 = plt.subplots()
-        color = 'tab:red'
+
+        color = 'tab:blue'
         ax1.set_xlabel('Compressed Dimension')
-        ax1.set_ylabel('Loss [%]', color=color)
-        ax1.plot(max_bond_dim, loss, color=color)
+        ax1.set_ylabel('Cosine Similarity', color=color)
+        ax1.plot(max_bond_dim, best_sim, color=color)
         ax1.tick_params(axis='y', labelcolor=color)
 
         ax2 = ax1.twinx()
-        color = 'tab:blue'
-        ax2.set_ylabel('Compression [%]', color=color)
-        ax2.plot(max_bond_dim, params, color=color)
+        color = 'tab:red'
+        ax2.set_ylabel('Euclidean Distance', color=color)
+        ax2.plot(max_bond_dim, best_dist, color=color)
         ax2.tick_params(axis='y', labelcolor=color)
+
+        plt.title('Metrics vs. Compressed Dimension')
+
+        fig.tight_layout()
         plt.show()
-        # loss = [100*(1-x) for x in best_sim]
+
+        plt.figure()
+        plt.title("Cosine Similarity vs. Euclidean Distance")
+        plt.xlabel("Euclidean Distance")
+        plt.ylabel("Cosine Similarity")
+
+        plt.plot(best_dist, best_sim)
 
         # plt.figure()
-        # plt.title("Loss vs. Max Bond Dimension (OrigBondDim=%d)"
-        #           % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
+        # plt.title("Cosine Similarity vs. Max Bond Dimension")
         # plt.xlabel("Max Bond Dimension")
-        # plt.ylabel("Loss (%)")
+        # plt.ylabel("Cosine Similarity")
 
-        # max_bond_dim = range(1, len(loss)+1)
-        # plt.plot(max_bond_dim, loss)
-        # # Marker at index where we have less than 5% loss
-        # try:
-        #     index = next(x for x, value in enumerate(loss) if value < 5)+1
-        #     plt.axvline(index, color='r', linestyle='--')
-        #     plt.text(index+0.1, max(loss)/2, '5% Loss Threshold', color='r')
-        #     plt.text(index+0.1, max(loss)/2-0.1*max(loss), 'Dim = %d' % index, color='r')
-        # except StopIteration:
-        #     print("No loss better than 5%")
+        # max_bond_dim = range(1, len(best_dist)+1)
+        # plt.plot(max_bond_dim, best_sim)
 
         # plt.figure()
-        # plt.title("Euclidean Distance vs. Max Bond Dimension (OrigBondDim=%d)"
-        #           % (raw_state[0].shape[0]**len(raw_state), raw_state[0].shape[0], bond_dim_raw_state))
+        # plt.title("Euclidean Distance vs. Max Bond Dimension")
         # plt.xlabel("Max Bond Dimension")
         # plt.ylabel("Euclidean Distance")
         # plt.plot(max_bond_dim, best_dist)
