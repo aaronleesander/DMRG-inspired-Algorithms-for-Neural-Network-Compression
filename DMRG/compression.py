@@ -195,7 +195,7 @@ def compress(raw_state, threshold, compressed_state=0, plot=0):
     dist = []  # Frobenius norm
     sim = []   # Cosine similarity (Scalar product)
     dist.append(metrics.overlap(compressed_state, raw_state))
-    sim.append(metrics.scalar_product(compressed_state, raw_state))
+    sim.append(metrics.similarity(compressed_state, raw_state))
     best_dist = []
     best_sim = []
     compressions = []
@@ -265,13 +265,6 @@ def compress(raw_state, threshold, compressed_state=0, plot=0):
 
         fig.tight_layout()
         plt.show()
-
-        plt.figure()
-        plt.title("Cosine Similarity vs. Euclidean Distance")
-        plt.xlabel("Euclidean Distance")
-        plt.ylabel("Cosine Similarity")
-
-        plt.plot(best_dist, best_sim)
 
         # plt.figure()
         # plt.title("Cosine Similarity vs. Max Bond Dimension")

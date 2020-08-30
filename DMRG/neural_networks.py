@@ -166,8 +166,7 @@ def compress_layer(raw_state, phys_dim, threshold, compressed_state=0, plot=0):
             #compressed_state, _ = can.left_normalize(compressed_state)
             best_dist.append(dist[-1])
             best_sim.append(sim[-1])
-            if plot == 0:
-                print("Sim:", best_sim[-1], "Dist:", best_dist[-1], "BondDim:", max_bond_dim)
+            print("Sim:", best_sim[-1], "Dist:", best_dist[-1], "BondDim:", max_bond_dim)
             compressions.append(compressed_state[:])
 
             # Break if we cannot increase bond dimension anymore
@@ -193,12 +192,31 @@ def compress_layer(raw_state, phys_dim, threshold, compressed_state=0, plot=0):
 
     if plot == 1:
         max_bond_dim = range(1, len(best_dist)+1)
+        fig, ax1 = plt.subplots()
+
+        color = 'tab:blue'
+        ax1.set_xlabel('Compressed Dimension')
+        ax1.set_ylabel('Cosine Similarity', color=color)
+        ax1.plot(max_bond_dim, best_sim, color=color)
+        ax1.tick_params(axis='y', labelcolor=color)
+
+        ax2 = ax1.twinx()
+        color = 'tab:red'
+        ax2.set_ylabel('Euclidean Distance', color=color)
+        ax2.plot(max_bond_dim, best_dist, color=color)
+        ax2.tick_params(axis='y', labelcolor=color)
+
+        plt.title('Metrics vs. Compressed Dimension')
+
+        fig.tight_layout()
+        plt.show()
 
         plt.figure()
-        plt.title("Euclidean Distance vs. Max Bond Dimension")
-        plt.xlabel("Max Bond Dimension")
-        plt.ylabel("Euclidean Distance")
-        plt.plot(max_bond_dim, best_dist)
+        plt.title("Cosine Similarity vs. Euclidean Distance")
+        plt.xlabel("Euclidean Distance")
+        plt.ylabel("Cosine Similarity")
+
+        plt.plot(best_dist, best_sim)
 
     return compressions, best_dist, best_sim
 
