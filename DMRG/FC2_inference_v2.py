@@ -19,11 +19,17 @@ def inference(inputs, r_1, r_2):
     inp_modes1 =  [4,7,7,4]
     out_modes1 =  [4,4,4,4]
     mat_rank1  =  [1,r_1,r_1,r_1,1]
+    # inp_modes1 = [2, 2, 7, 7, 2, 2]
+    # out_modes1 = [2, 2, 2, 2, 2, 2]
+    # mat_rank1 = [1, r_1, r_1, r_1, r_1, r_1, 1]
 
     #TTO_layer2
     inp_modes2 = [4,4,4,4]
     out_modes2 = [1,10,1,1]
     mat_rank2 =  [1,r_2,r_2,r_2,1]
+    # inp_modes2 = [2, 2, 2, 2, 2, 2]
+    # out_modes2 = [1, 1, 2, 5, 1, 1]
+    # mat_rank2 = [1, r_2, r_2, r_2, r_2, r_2, 1]
 
     inputs = tt.tto(inputs,
                     np.array(inp_modes1,dtype=np.int32),

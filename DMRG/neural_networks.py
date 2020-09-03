@@ -282,7 +282,7 @@ def test_overall_loss_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0
 
     ax2 = ax1.twinx()
     color = 'tab:blue'
-    ax2.set_ylabel('Compression [%]', color=color)
+    ax2.set_ylabel('Compression Ratio [%]', color=color)
     ax2.plot(x, params, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
 
