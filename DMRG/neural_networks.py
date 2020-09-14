@@ -221,82 +221,53 @@ def compress_layer(raw_state, phys_dim, threshold, compressed_state=0, plot=0):
     return compressions, best_dist, best_sim
 
 
-def test_overall_loss_FC2(compressed_MPS_0, compressed_MPS_1, MPO_0_orig, bias_0, MPO_1_orig, bias_1, sigma_0, sigma_1, sigma_2):
-    acc_compressed = []
-    time_compressed = []
-    params = []
-    if len(compressed_MPS_0) > len(compressed_MPS_1):
-        shortest = len(compressed_MPS_1)
-        longest = len(compressed_MPS_0)
-    else:
-        shortest = len(compressed_MPS_0)
-        longest = len(compressed_MPS_1)
+def compress_layer_single_dim(raw_state, phys_dim, threshold):
+    """ Initializes a compressed state then sweeps left->right
+        and right->left until a minimum is reached at a single bond dimension
 
-    for new_dim in range(1, longest+1):
-        if new_dim < shortest:
-            MPS_0 = compressed_MPS_0[new_dim-1]
-            MPS_1 = compressed_MPS_1[new_dim-1]
-        else:
-            if shortest == len(compressed_MPS_0):
-                MPS_0 = compressed_MPS_0[-1]
-                MPS_1 = compressed_MPS_1[new_dim-1]
-            elif shortest == len(compressed_MPS_1):
-                MPS_0 = compressed_MPS_0[new_dim-1]
-                MPS_1 = compressed_MPS_1[-1]
+        Note: Does NOT normalize the state unlike the compression function
+              found in compression.py
 
-        dim_0 = [MPS_0[0].shape[1], MPS_0[1].shape[1], MPS_0[2].shape[1], MPS_0[3].shape[1]]
-        dim_1 = [MPS_1[0].shape[1], MPS_1[1].shape[1], MPS_1[2].shape[1], MPS_1[3].shape[1]]
-        MPO_0 = open_legs(MPS_0, sigma_0, sigma_1, bond_dim=dim_0)
-        MPO_1 = open_legs(MPS_1, sigma_1, sigma_2, bond_dim=dim_1)
+    Args:
+        raw_state: MPS to be compressed
+        phys_dim: List of physical dimensions by site
+        threshold: Difference between sweeps under which a solution is found
 
-        total_params = 0
-        for tensor in MPO_0:
-            total_params += tensor.size
-        for tensor in MPO_1:
-            total_params += tensor.size
-        params.append(total_params)
+    Returns:
+        compressed_state: List of MPS tensors for final compressed state
+        dist: List of overlap values for each bond dimension
+        sim: List of cosine similarity values for each bond dimension
+    """
+    compressed_state = init.initialize_random_MPS_with_changing_phys_dim(phys_dim,
+                                                                         num_sites=len(raw_state),
+                                                                         bond_dim=compressed_dim)
+    bond_dim_raw_state = raw_state[math.ceil(len(raw_state)/2)].shape[0]
 
-        acc, t = FC2(MPO_0, bias_0, MPO_1, bias_1)
-        acc_compressed.append(acc)
-        time_compressed.append(t)
+    # Initialize accuracy metrics
+    dist = []  # Frobenius norm
+    sim = []   # Cosine similarity (Scalar product)
+    dist.append(metrics.overlap(compressed_state, raw_state))
+    sim.append(metrics.similarity(compressed_state, raw_state))
+    # We sweep left to right and then back right to left across the mixed state
+    while True:
+        # Left->right sweep
+        for site in range(0, len(raw_state)-1):
+            compressed_state[site], compressed_state[site+1] = comp.update_site(compressed_state, raw_state,
+                                                                           site=site, dir='right')
+        # Right->left sweep
+        for site in range(len(raw_state)-1, 0, -1):
+            compressed_state[site], compressed_state[site-1] = comp.update_site(compressed_state, raw_state,
+                                                                           site=site, dir='left')
 
-    params_orig = 768*256 + 256*10
-    # params_orig = 0
-    # for tensor in MPO_0_orig:
-    #     params_orig += tensor.size
-    # for tensor in MPO_1_orig:
-    #     params_orig += tensor.size
+        # Metrics taken after each sweep
+        dist.append(metrics.overlap(compressed_state, raw_state))
+        sim.append(metrics.similarity(compressed_state, raw_state))
+        # Check if sweeps are still working
+        if np.abs(dist[-2]-dist[-1]) < threshold:
+            print("Sim:", sim[-1], "Dist:", dist[-1], "BondDim:", compressed_dim)
+            break
 
-    acc_orig, time_orig = FC2(MPO_0_orig, bias_0, MPO_1_orig, bias_1)
-
-    x = range(1, len(compressed_MPS_0)+1)
-    loss = [acc_orig-x for x in acc_compressed]
-    params = np.array(params)/params_orig*100
-    fig, ax1 = plt.subplots()
-
-    color = 'tab:red'
-    ax1.set_xlabel('Compressed Dimension')
-    ax1.set_ylabel('Loss [%]', color=color)
-    ax1.plot(x, loss, color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-
-    ax2 = ax1.twinx()
-    color = 'tab:blue'
-    ax2.set_ylabel('Compression Ratio [%]', color=color)
-    ax2.plot(x, params, color=color)
-    ax2.tick_params(axis='y', labelcolor=color)
-
-    plt.title('Loss vs. Compressed Dimension, OrigDim=%d' %(len(compressed_MPS_0)))
-
-    fig.tight_layout()
-    plt.show()
-
-    plt.figure()
-    plt.plot(x, time_compressed)
-    plt.title('Contraction Time vs. Compressed Dimension')
-    plt.xlabel('Time [s]')
-    plt.ylabel('Compressed Dimension')
-    plt.axhline(time_orig, color='r', linestyle='--')
+    return compressed_state, dist, sim
 
 
 def FC2(MPO_0, bias_0, MPO_1, bias_1):
@@ -349,17 +320,17 @@ def FC2(MPO_0, bias_0, MPO_1, bias_1):
 
 
 def vector_to_left_canonical_MPS_NN(tensor, phys_dim):
-    """ Decomposes a vector of length d^L (phys_dim^num_sites) into a
-        left-canonical MPS. Final site will not be canonical due to
-        original norm
+    """ Decomposes a vector into a left-canonical MPS with changing
+        physcial dimensions. Final site will not be canonical due to
+        original norm.
 
     Args:
-        tensor: Vector of length that can be described by d^L (Ex: 512 = 2^9)
-        phys_dim: Physical dimension necessary on MPS at each site (d)
-        num_sites: Number of sites necessary (L)
+        tensor: Original flattened tensor (vector)
+        phys_dim: List of physical dimension necessary on MPS at each site
+        num_sites: number of sites necessary (L)
 
     Returns:
-        A_tensors: Left canonical form of input MPS
+        A_tensors: Left canonical MPS of input tensor
     """
 
     A_tensors = []
