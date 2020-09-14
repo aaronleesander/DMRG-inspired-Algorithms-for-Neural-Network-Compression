@@ -10,7 +10,7 @@ import DMRG_functions.canonical_forms as can
 import DMRG_functions.compression as comp
 import DMRG_functions.contractions as con
 import DMRG_functions.initializations as init
-import DMRG_functions.metrics
+import DMRG_functions.metrics as metrics
 
 
 def calculate_params(data):
